@@ -7,52 +7,39 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
 
-// The caregiver dashboard is a simple landing that directs to tabs.
-// Main navigation happens via the bottom tabs — this screen acts as
-// a "home" for the History tab's initial display.
 export default function CaregiverDashboard() {
   const { patientName, patientId, clearRole } = useApp();
 
   return (
     <SafeAreaView style={styles.container}>
+      <LinearGradient
+        colors={[colors.primaryDark, colors.primary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.heroGradient}
+      >
+        <View style={styles.heroBadge}>
+          <Text style={styles.heroBadgeText}>CAREGIVER</Text>
+        </View>
+        <Text style={styles.heroTitle}>Welcome back</Text>
+        <Text style={styles.heroSubtitle}>
+          {patientName ? `Monitoring: ${patientName}` : 'Select a patient to begin'}
+        </Text>
+      </LinearGradient>
+
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Caregiver View</Text>
-          <Text style={styles.subtitle}>Monitoring: {patientName || 'Patient'}</Text>
-          <Text style={styles.patientId}>ID: {patientId}</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardIcon}>📋</Text>
+          <Text style={styles.cardTitle}>Patient ID</Text>
+          <Text style={styles.cardValue}>{patientId || 'Not set'}</Text>
         </View>
 
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Quick Guide</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>💬</Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.infoBold}>History</Text> — View all past conversations with the AI assistant
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>📋</Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.infoBold}>Context</Text> — Edit patient profile, medications, and routines
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>🔔</Text>
-            <Text style={styles.infoText}>
-              <Text style={styles.infoBold}>Alerts</Text> — See all SOS emergency events
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.switchButton}
-          onPress={clearRole}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.switchButtonText}>Switch to Patient Mode</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={clearRole}>
+          <Text style={styles.logoutText}>Switch Role</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -60,80 +47,56 @@ export default function CaregiverDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: colors.background },
+  heroGradient: {
+    paddingTop: 32,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    alignItems: 'flex-start',
   },
-  content: {
-    padding: 20,
-    gap: 20,
-  },
-  header: {
-    backgroundColor: colors.primary,
+  heroBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginBottom: 12,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
+  heroBadgeText: {
     color: colors.white,
-    marginBottom: 6,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
-  subtitle: {
-    fontSize: 20,
-    color: 'rgba(255,255,255,0.9)',
+  heroTitle: {
+    color: colors.white,
+    fontSize: 28,
+    fontWeight: '800',
     marginBottom: 4,
   },
-  patientId: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.65)',
-    fontFamily: 'monospace',
+  heroSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 16,
   },
-  infoCard: {
+  content: { padding: 20, gap: 16 },
+  card: {
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 16,
+    alignItems: 'center',
+    gap: 8,
   },
-  infoTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  infoIcon: {
-    fontSize: 22,
-    marginTop: 2,
-  },
-  infoText: {
-    fontSize: 17,
-    color: colors.text,
-    lineHeight: 26,
-    flex: 1,
-  },
-  infoBold: {
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  switchButton: {
+  cardIcon: { fontSize: 32 },
+  cardTitle: { fontSize: 13, color: colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardValue: { fontSize: 17, color: colors.text, fontWeight: '700' },
+  logoutButton: {
     backgroundColor: colors.surface,
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.border,
   },
-  switchButtonText: {
-    fontSize: 17,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
+  logoutText: { fontSize: 16, color: colors.textMuted, fontWeight: '600' },
 });
