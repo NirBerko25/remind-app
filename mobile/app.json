@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "ReMind",
+    "slug": "remind",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "backgroundColor": "#2C7BE5"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "ReMind needs microphone access for voice interaction",
+        "NSSpeechRecognitionUsageDescription": "ReMind needs speech recognition for voice input"
+      }
+    },
+    "android": {
+      "permissions": ["RECORD_AUDIO", "VIBRATE"]
+    },
+    "plugins": [
+      "expo-av",
+      [
+        "expo-notifications",
+        {
+          "color": "#2C7BE5"
+        }
+      ]
+    ]
+  }
+}
