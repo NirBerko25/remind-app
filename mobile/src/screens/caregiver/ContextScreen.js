@@ -151,6 +151,7 @@ const DEFAULT_CONTEXT = {
   baselineRules: '',
   notes: '',
   favoriteSong: '',
+  language: 'he',
 };
 
 export default function ContextScreen() {
@@ -185,6 +186,7 @@ export default function ContextScreen() {
         baselineRules: data.baselineRules || data.baseline_rules || '',
         notes: data.notes || '',
         favoriteSong: data.favoriteSong || '',
+        language: data.language || 'he',
       };
       setContext(normalized);
       originalContextRef.current = JSON.stringify(normalized);
@@ -378,6 +380,32 @@ export default function ContextScreen() {
             numberOfLines={5}
             textAlignVertical="top"
           />
+
+          {/* Speaking Language */}
+          <SectionHeader title="Speaking Language" icon="🌐" />
+          <View style={styles.languagePicker}>
+            <TouchableOpacity
+              style={[styles.langBtn, context.language === 'he' && styles.langBtnActive]}
+              onPress={() => updateField('language', 'he')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.langBtnText, context.language === 'he' && styles.langBtnTextActive]}>
+                עברית — Hebrew
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.langBtn, context.language === 'en' && styles.langBtnActive]}
+              onPress={() => updateField('language', 'en')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.langBtnText, context.language === 'en' && styles.langBtnTextActive]}>
+                English
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.langHint}>
+            The AI assistant will speak and respond in this language.
+          </Text>
 
           {/* Favorite Song */}
           <SectionHeader title="Favorite Song" icon="🎵" />
@@ -693,6 +721,38 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 17,
     fontWeight: '600',
+  },
+  languagePicker: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 6,
+  },
+  langBtn: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingVertical: 13,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+  },
+  langBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  langBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
+  langBtnTextActive: {
+    color: colors.primary,
+  },
+  langHint: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginBottom: 4,
+    paddingHorizontal: 4,
   },
   songHint: {
     fontSize: 13,

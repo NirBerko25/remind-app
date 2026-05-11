@@ -99,6 +99,7 @@ function setupDatabase() {
 
   // Migrations — add columns that may not exist in older DBs
   try { database.exec(`ALTER TABLE patient_context ADD COLUMN favorite_song TEXT`); } catch {}
+  try { database.exec(`ALTER TABLE patient_context ADD COLUMN language TEXT DEFAULT 'he'`); } catch {}
   try { database.exec(`ALTER TABLE conversations ADD COLUMN tldr TEXT`); } catch {}
   try { database.exec(`ALTER TABLE conversations ADD COLUMN summary TEXT`); } catch {}
   try { database.exec(`ALTER TABLE sos_events ADD COLUMN resolved_at INTEGER`); } catch {}

@@ -39,6 +39,7 @@ function buildSystemPrompt(context) {
   const age = context?.age || 'unknown age';
   const address = context?.address || 'address not provided';
   const dailyRoutine = context?.daily_routine || 'routine not specified';
+  const language = context?.language === 'en' ? 'English' : 'Hebrew';
 
   let familyStr = 'not specified';
   if (context?.family) {
@@ -70,7 +71,7 @@ function buildSystemPrompt(context) {
 
   return `You are ReMind, a gentle and calm AI assistant helping ${name}.
 
-IMPORTANT: Always respond in Hebrew, regardless of what language the patient uses.
+IMPORTANT: Always respond in ${language}, regardless of what language the patient uses.
 
 Patient context:
 - Name: ${name}

@@ -337,7 +337,7 @@ export default function PatientHomeScreen() {
         setMicLabel('Tap to talk');
       };
       speakFallbackRef.current = setTimeout(resetToIdle, aiText.length * 90 + 3000);
-      speakText(aiText, { onDone: resetToIdle, onStopped: resetToIdle, onError: resetToIdle })
+      speakText(aiText, { language: patientContext?.language, onDone: resetToIdle, onStopped: resetToIdle, onError: resetToIdle })
         .catch(() => resetToIdle());
     } catch (err) {
       console.error('Voice flow error:', err);
