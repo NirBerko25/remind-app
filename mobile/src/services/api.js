@@ -48,7 +48,7 @@ export async function sendMessage(patientId, message, conversationId = null) {
  * @param {string} audioUri - local file URI from expo-av
  * @returns {{ transcript: string }}
  */
-export async function transcribeAudio(audioUri) {
+export async function transcribeAudio(audioUri, language = 'he') {
   const formData = new FormData();
 
   if (typeof document !== 'undefined') {
@@ -64,6 +64,8 @@ export async function transcribeAudio(audioUri) {
     const type = match ? `audio/${match[1]}` : 'audio/m4a';
     formData.append('audio', { uri: audioUri, name: filename || 'recording.m4a', type });
   }
+
+  formData.append('language', language);
 
   const response = await apiClient.post('/transcribe', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },

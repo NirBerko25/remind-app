@@ -450,7 +450,7 @@ export default function PatientHomeScreen() {
 
       let transcript = null;
       try {
-        const result = await transcribeAudio(uri);
+        const result = await transcribeAudio(uri, patientContext?.language || 'he');
         transcript = result.transcript;
       } catch (err) {
         console.error('Transcription error:', err);
