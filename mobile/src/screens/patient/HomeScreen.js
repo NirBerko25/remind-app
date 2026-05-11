@@ -157,6 +157,7 @@ export default function PatientHomeScreen() {
           familyMembers: Array.isArray(data.family) ? data.family : [],
           notes: data.notes || '',
           favoriteSong: data.favoriteSong || null,
+          language: data.language || 'he',
         });
       })
       .catch(() => {}); // fail silently — context is optional
