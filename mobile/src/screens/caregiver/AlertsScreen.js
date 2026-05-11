@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../../constants/colors';
-import { getAlerts, resolveAlert } from '../../services/api';
+import { getAlerts, resolveAlert, getLocationBreaches } from '../../services/api';
 import { useApp } from '../../context/AppContext';
 import { API_BASE_URL } from '../../constants/config';
 
@@ -51,6 +51,7 @@ function formatFullTime(dateString) {
 
 function AlertCard({ alert, onResolve }) {
   const [resolving, setResolving] = React.useState(false);
+  const isBreach = alert._type === 'breach';
   const patientName = alert.patientName || alert.patient_name || 'Patient';
   const timestamp = alert.triggered_at || alert.timestamp || alert.createdAt || alert.created_at;
   const resolved = alert.resolved || false;
@@ -67,23 +68,28 @@ function AlertCard({ alert, onResolve }) {
   };
 
   return (
-    <View style={[styles.card, resolved && styles.cardResolved]}>
+    <View style={[styles.card, isBreach && styles.cardBreach, resolved && styles.cardResolved]}>
       <View style={styles.cardLeft}>
-        <View style={[styles.alertIcon, resolved && styles.alertIconResolved]}>
-          <Text style={styles.alertIconText}>{resolved ? '✓' : '🆘'}</Text>
+        <View style={[styles.alertIcon, isBreach && styles.alertIconBreach, resolved && styles.alertIconResolved]}>
+          <Text style={styles.alertIconText}>{resolved ? '✓' : isBreach ? '📍' : '🆘'}</Text>
         </View>
-        <Text style={[styles.alertRelTime, resolved && styles.alertRelTimeResolved]}>
+        <Text style={[styles.alertRelTime, isBreach && styles.alertRelTimeBreach, resolved && styles.alertRelTimeResolved]}>
           {formatAlertTime(timestamp)}
         </Text>
       </View>
       <View style={styles.cardContent}>
         <View style={styles.cardTopRow}>
-          <Text style={[styles.cardTitle, resolved && styles.cardTitleResolved]}>
-            {resolved ? 'Handled' : 'SOS Alert'}
+          <Text style={[styles.cardTitle, isBreach && styles.cardTitleBreach, resolved && styles.cardTitleResolved]}>
+            {resolved ? 'Handled' : isBreach ? 'Safe Zone Alert' : 'SOS Alert'}
           </Text>
-          {!resolved && (
+          {!resolved && !isBreach && (
             <View style={styles.urgentBadge}>
               <Text style={styles.urgentBadgeText}>URGENT</Text>
+            </View>
+          )}
+          {!resolved && isBreach && (
+            <View style={styles.breachBadge}>
+              <Text style={styles.breachBadgeText}>WANDERED</Text>
             </View>
           )}
         </View>
@@ -96,12 +102,14 @@ function AlertCard({ alert, onResolve }) {
             </Text>
           )}
         </View>
-        {alert.note || alert.message ? (
+        {(alert.note || alert.message) ? (
           <Text style={styles.cardNote} numberOfLines={2}>
             {alert.note || alert.message}
           </Text>
+        ) : isBreach ? (
+          <Text style={styles.cardNote}>{patientName} left their safe zone.</Text>
         ) : null}
-        {!resolved && (
+        {!resolved && !isBreach && (
           <TouchableOpacity
             style={styles.resolveButton}
             onPress={handleResolve}
@@ -132,25 +140,31 @@ export default function AlertsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [liveAlert, setLiveAlert] = useState(null);
+  const [liveBreach, setLiveBreach] = useState(null);
   const sseRef = useRef(null);
 
   const loadAlerts = useCallback(async () => {
     try {
       setError(null);
-      const data = await getAlerts();
-      const alertList = Array.isArray(data) ? data : data.alerts || [];
-      // Sort by most recent first
-      alertList.sort((a, b) => {
-        const aTime = new Date(a.timestamp || a.createdAt || 0);
-        const bTime = new Date(b.timestamp || b.createdAt || 0);
+      const [sosData, breachData] = await Promise.all([
+        getAlerts(),
+        getLocationBreaches(patientId).catch(() => []),
+      ]);
+      const sosList = (Array.isArray(sosData) ? sosData : sosData.alerts || [])
+        .map(a => ({ ...a, _type: 'sos' }));
+      const breachList = (Array.isArray(breachData) ? breachData : [])
+        .map(b => ({ ...b, _type: 'breach' }));
+      const combined = [...sosList, ...breachList].sort((a, b) => {
+        const aTime = new Date(a.triggered_at || a.timestamp || a.createdAt || 0).getTime();
+        const bTime = new Date(b.triggered_at || b.timestamp || b.createdAt || 0).getTime();
         return bTime - aTime;
       });
-      setAlerts(alertList);
+      setAlerts(combined);
     } catch (err) {
       setError('Could not load alerts. Check your connection.');
       console.error('AlertsScreen error:', err);
     }
-  }, []);
+  }, [patientId]);
 
   useEffect(() => {
     async function init() {
@@ -174,19 +188,36 @@ export default function AlertsScreen() {
     es.addEventListener('sos', (e) => {
       try {
         const data = JSON.parse(e.data);
-        // Show a prominent in-app banner
         setLiveAlert(data);
-        // Also prepend to the alerts list immediately
-        const newAlert = {
-          id: `live-${Date.now()}`,
+        setAlerts((prev) => [{
+          id: `live-sos-${Date.now()}`,
+          _type: 'sos',
           patient_name: data.patientName,
           triggered_at: data.triggeredAt,
           notifications_sent: 1,
-        };
-        setAlerts((prev) => [newAlert, ...prev]);
-        // Browser notification if permitted
+        }, ...prev]);
         if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
           new Notification('🆘 SOS Alert', { body: data.message });
+        }
+      } catch (err) {
+        console.error('[SSE] Parse error:', err);
+      }
+    });
+
+    es.addEventListener('location_breach', (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        setLiveBreach(data);
+        setAlerts((prev) => [{
+          id: `live-breach-${Date.now()}`,
+          _type: 'breach',
+          patient_name: data.patientName,
+          triggered_at: data.triggeredAt,
+          notifications_sent: 1,
+          message: data.message,
+        }, ...prev]);
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          new Notification('📍 Safe Zone Alert', { body: data.message });
         }
       } catch (err) {
         console.error('[SSE] Parse error:', err);
@@ -239,12 +270,9 @@ export default function AlertsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Live SSE alert banner */}
+      {/* Live SOS banner */}
       {liveAlert && (
-        <TouchableOpacity
-          onPress={() => setLiveAlert(null)}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity onPress={() => setLiveAlert(null)} activeOpacity={0.85}>
           <LinearGradient
             colors={['#DC2626', '#B91C1C']}
             start={{ x: 0, y: 0 }}
@@ -253,6 +281,22 @@ export default function AlertsScreen() {
           >
             <Text style={styles.liveBannerTitle}>🆘 SOS ALERT RECEIVED</Text>
             <Text style={styles.liveBannerBody}>{liveAlert.message}</Text>
+            <Text style={styles.liveBannerDismiss}>Tap to dismiss</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
+
+      {/* Live breach banner */}
+      {liveBreach && (
+        <TouchableOpacity onPress={() => setLiveBreach(null)} activeOpacity={0.85}>
+          <LinearGradient
+            colors={['#D97706', '#B45309']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.liveBanner}
+          >
+            <Text style={styles.liveBannerTitle}>📍 SAFE ZONE ALERT</Text>
+            <Text style={styles.liveBannerBody}>{liveBreach.message}</Text>
             <Text style={styles.liveBannerDismiss}>Tap to dismiss</Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -299,9 +343,9 @@ export default function AlertsScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>✅</Text>
-            <Text style={styles.emptyTitle}>No SOS alerts</Text>
+            <Text style={styles.emptyTitle}>No alerts</Text>
             <Text style={styles.emptySubtext}>
-              SOS alerts will appear here when the patient needs help.
+              SOS and safe zone alerts will appear here.
               {'\n\n'}Pull down to check for new alerts.
             </Text>
           </View>
@@ -428,6 +472,11 @@ const styles = StyleSheet.create({
     elevation: 3,
     gap: 12,
   },
+  cardBreach: {
+    borderColor: '#FDE68A',
+    borderLeftColor: '#D97706',
+    shadowColor: '#D97706',
+  },
   cardResolved: {
     borderColor: colors.border,
     borderLeftColor: colors.secondary,
@@ -449,6 +498,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  alertIconBreach: {
+    backgroundColor: '#FEF3C7',
+  },
   alertIconResolved: {
     backgroundColor: '#DCFCE7',
   },
@@ -460,6 +512,9 @@ const styles = StyleSheet.create({
     color: colors.danger,
     fontWeight: '700',
     textAlign: 'center',
+  },
+  alertRelTimeBreach: {
+    color: '#D97706',
   },
   alertRelTimeResolved: {
     color: colors.textMuted,
@@ -478,6 +533,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.danger,
   },
+  cardTitleBreach: {
+    color: '#D97706',
+  },
   cardTitleResolved: {
     color: colors.secondary,
     fontWeight: '700',
@@ -492,6 +550,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: '#991B1B',
+    letterSpacing: 0.5,
+  },
+  breachBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  breachBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#92400E',
     letterSpacing: 0.5,
   },
   cardPatient: {
