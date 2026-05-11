@@ -20,9 +20,11 @@ import { colors } from '../../constants/colors';
 import VoiceButton from '../../components/VoiceButton';
 import SOSButton from '../../components/SOSButton';
 import ConversationBubble from '../../components/ConversationBubble';
-import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong } from '../../services/api';
+import LocationStatusBanner from '../../components/LocationStatusBanner';
+import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones } from '../../services/api';
 import { speakText, stopSpeaking, warmUpSpeech } from '../../services/speech';
 import { API_BASE_URL } from '../../constants/config';
+import { startGeofencing, stopGeofencing, updateZonesCache } from '../../services/geofencing';
 
 const MIC_STATES = {
   IDLE: 'idle',
@@ -87,6 +89,18 @@ export default function PatientHomeScreen() {
       stopSpeaking();
     };
   }, []);
+
+  // Start geofencing on mount, seed zone cache
+  useEffect(() => {
+    if (!patientId) return;
+    getSafeZones(patientId)
+      .then(zones => {
+        updateZonesCache(zones);
+        if (zones.length > 0) startGeofencing();
+      })
+      .catch(() => {}); // geofencing is non-critical
+    return () => { stopGeofencing(); };
+  }, [patientId]);
 
   // Load patient context on mount
   useEffect(() => {
@@ -470,6 +484,9 @@ export default function PatientHomeScreen() {
         <Text style={styles.dateText}>{getCurrentDate()}</Text>
         <Text style={styles.timeText}>{currentTime}</Text>
       </LinearGradient>
+
+      {/* Location Status Banner */}
+      <LocationStatusBanner patientId={patientId} />
 
       {/* Care Alert Banner */}
       {showCareAlert && (

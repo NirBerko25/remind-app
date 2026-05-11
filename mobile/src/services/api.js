@@ -175,3 +175,31 @@ export async function resolveAlert(alertId) {
   const response = await apiClient.patch(`/sos/alerts/${alertId}/resolve`);
   return response.data;
 }
+
+// ── Safe Zones ────────────────────────────────────────────────────────────────
+
+export async function getSafeZones(patientId) {
+  const response = await apiClient.get(`/safezones/${patientId}`);
+  return response.data;
+}
+
+export async function createSafeZone(patientId, zone) {
+  const response = await apiClient.post(`/safezones/${patientId}`, zone);
+  return response.data;
+}
+
+export async function deleteSafeZone(patientId, zoneId) {
+  const response = await apiClient.delete(`/safezones/${patientId}/${zoneId}`);
+  return response.data;
+}
+
+export async function reportLocationBreach(patientId, latitude, longitude) {
+  const response = await apiClient.post('/location/breach', { patientId, latitude, longitude });
+  return response.data;
+}
+
+export async function getLocationBreaches(patientId) {
+  const url = patientId ? `/location/breaches?patientId=${patientId}` : '/location/breaches';
+  const response = await apiClient.get(url);
+  return response.data;
+}

@@ -72,6 +72,29 @@ function setupDatabase() {
       notifications_sent INTEGER DEFAULT 0,
       FOREIGN KEY (patient_id) REFERENCES patients(id)
     );
+
+    CREATE TABLE IF NOT EXISTS safe_zones (
+      id TEXT PRIMARY KEY,
+      patient_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'circle',
+      latitude REAL,
+      longitude REAL,
+      radius REAL DEFAULT 500,
+      coordinates TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      FOREIGN KEY (patient_id) REFERENCES patients(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS location_breaches (
+      id TEXT PRIMARY KEY,
+      patient_id TEXT NOT NULL,
+      latitude REAL,
+      longitude REAL,
+      triggered_at INTEGER DEFAULT (unixepoch()),
+      notifications_sent INTEGER DEFAULT 0,
+      FOREIGN KEY (patient_id) REFERENCES patients(id)
+    );
   `);
 
   // Migrations — add columns that may not exist in older DBs
