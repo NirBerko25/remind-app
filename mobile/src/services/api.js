@@ -188,6 +188,11 @@ export async function createSafeZone(patientId, zone) {
   return response.data;
 }
 
+export async function updateSafeZone(patientId, zoneId, updates) {
+  const response = await apiClient.patch(`/safezones/${patientId}/${zoneId}`, updates);
+  return response.data;
+}
+
 export async function deleteSafeZone(patientId, zoneId) {
   const response = await apiClient.delete(`/safezones/${patientId}/${zoneId}`);
   return response.data;

@@ -68,6 +68,31 @@ router.post('/:patientId', (req, res) => {
   }
 });
 
+// PATCH /api/safezones/:patientId/:zoneId
+router.patch('/:patientId/:zoneId', (req, res) => {
+  try {
+    const { patientId, zoneId } = req.params;
+    const { name, radius } = req.body;
+    if (!name && radius == null) {
+      return res.status(400).json({ error: 'Nothing to update' });
+    }
+    const db = getDb();
+    const zone = db.prepare('SELECT * FROM safe_zones WHERE id = ? AND patient_id = ?').get(zoneId, patientId);
+    if (!zone) return res.status(404).json({ error: 'Zone not found' });
+
+    if (name) db.prepare('UPDATE safe_zones SET name = ? WHERE id = ?').run(name.trim(), zoneId);
+    if (zone.type === 'circle' && radius != null) {
+      db.prepare('UPDATE safe_zones SET radius = ? WHERE id = ?').run(parseFloat(radius), zoneId);
+    }
+
+    console.log(`[SafeZones] Updated zone ${zoneId}`);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[SafeZones] PATCH error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/safezones/:patientId/:zoneId
 router.delete('/:patientId/:zoneId', (req, res) => {
   try {

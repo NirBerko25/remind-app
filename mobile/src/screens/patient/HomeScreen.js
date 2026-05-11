@@ -21,10 +21,11 @@ import VoiceButton from '../../components/VoiceButton';
 import SOSButton from '../../components/SOSButton';
 import ConversationBubble from '../../components/ConversationBubble';
 import LocationStatusBanner from '../../components/LocationStatusBanner';
-import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones } from '../../services/api';
+import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones, reportLocationBreach } from '../../services/api';
 import { speakText, stopSpeaking, warmUpSpeech } from '../../services/speech';
 import { API_BASE_URL } from '../../constants/config';
-import { startGeofencing, stopGeofencing, updateZonesCache } from '../../services/geofencing';
+import { startGeofencing, stopGeofencing, updateZonesCache, isInsideZone } from '../../services/geofencing';
+import * as Location from 'expo-location';
 
 const MIC_STATES = {
   IDLE: 'idle',
@@ -90,16 +91,53 @@ export default function PatientHomeScreen() {
     };
   }, []);
 
-  // Start geofencing on mount, seed zone cache
+  // Foreground location polling — works on web and native, always uses fresh zone data
+  const lastBreachRef = useRef(0);
+  const FOREGROUND_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes between alerts
+  const POLL_INTERVAL_MS = 20 * 1000; // check every 20s
+
   useEffect(() => {
     if (!patientId) return;
-    getSafeZones(patientId)
-      .then(zones => {
+
+    const checkLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+
+        const [loc, zones] = await Promise.all([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          getSafeZones(patientId),
+        ]);
+
         updateZonesCache(zones);
-        if (zones.length > 0) startGeofencing();
-      })
-      .catch(() => {}); // geofencing is non-critical
-    return () => { stopGeofencing(); };
+        if (!zones.length) return;
+
+        const { latitude, longitude } = loc.coords;
+        const inZone = zones.some(z => isInsideZone(z, latitude, longitude));
+        if (!inZone) {
+          const now = Date.now();
+          if (now - lastBreachRef.current < FOREGROUND_COOLDOWN_MS) return;
+          lastBreachRef.current = now;
+          await reportLocationBreach(patientId, latitude, longitude);
+        }
+      } catch {
+        // location is non-critical
+      }
+    };
+
+    // Kick off immediately, then poll
+    checkLocation();
+    const interval = setInterval(checkLocation, POLL_INTERVAL_MS);
+
+    // Also start native background task (no-op on web)
+    getSafeZones(patientId)
+      .then(zones => { if (zones.length > 0) startGeofencing(); })
+      .catch(() => {});
+
+    return () => {
+      clearInterval(interval);
+      stopGeofencing();
+    };
   }, [patientId]);
 
   // Load patient context on mount

@@ -17,7 +17,7 @@ import MapView, { Marker, Circle, Polygon, Polyline, PROVIDER_GOOGLE } from 'rea
 import * as Location from 'expo-location';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
-import { getSafeZones, createSafeZone, deleteSafeZone, getContext } from '../../services/api';
+import { getSafeZones, createSafeZone, deleteSafeZone, updateSafeZone, getContext } from '../../services/api';
 import { updateZonesCache } from '../../services/geofencing';
 
 const DEFAULT_REGION = {
@@ -54,6 +54,12 @@ export default function SafeZonesScreen() {
   const [saving, setSaving] = useState(false);
 
   const [mapTypeIndex, setMapTypeIndex] = useState(0);
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingZone, setEditingZone] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editRadius, setEditRadius] = useState('500');
+  const [editSaving, setEditSaving] = useState(false);
 
   // regionRef holds the live region without causing re-renders; region state
   // is only used to trigger label re-position after map movement.
@@ -116,6 +122,14 @@ export default function SafeZonesScreen() {
     const longitude = r.longitude + (lx / width - 0.5) * r.longitudeDelta;
     if (isNaN(latitude) || isNaN(longitude)) return null;
     return { latitude, longitude };
+  };
+
+  // ── Polygon centroid (simple average of vertices) ────────────────────────
+  const polygonCentroid = (coords) => {
+    if (!coords || !coords.length) return null;
+    const lat = coords.reduce((s, c) => s + c.latitude, 0) / coords.length;
+    const lng = coords.reduce((s, c) => s + c.longitude, 0) / coords.length;
+    return { latitude: lat, longitude: lng };
   };
 
   // ── Coordinate → screen point (inverse of pressToCoordinate) ─────────────
@@ -232,25 +246,54 @@ export default function SafeZonesScreen() {
 
   // ── Delete zone ───────────────────────────────────────────────────────────
   const confirmDelete = (zone) => {
-    Alert.alert(
-      'Delete Zone',
-      `Remove "${zone.name}" from safe zones?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteSafeZone(patientId, zone.id);
-              await loadZones();
-            } catch {
-              Alert.alert('Error', 'Could not delete zone.');
-            }
-          },
-        },
-      ]
-    );
+    const doDelete = async () => {
+      try {
+        await deleteSafeZone(patientId, zone.id);
+        await loadZones();
+      } catch {
+        Alert.alert('Error', 'Could not delete zone.');
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Remove "${zone.name}" from safe zones?`)) doDelete();
+    } else {
+      Alert.alert(
+        'Delete Zone',
+        `Remove "${zone.name}" from safe zones?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Delete', style: 'destructive', onPress: doDelete },
+        ]
+      );
+    }
+  };
+
+  const openEdit = (zone) => {
+    setEditingZone(zone);
+    setEditName(zone.name);
+    setEditRadius(String(zone.radius || 500));
+    setEditModalVisible(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editName.trim()) {
+      Alert.alert('Name required', 'Please enter a name for this zone.');
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const updates = { name: editName.trim() };
+      if (editingZone.type === 'circle') updates.radius = parseFloat(editRadius) || 500;
+      await updateSafeZone(patientId, editingZone.id, updates);
+      setEditModalVisible(false);
+      setEditingZone(null);
+      await loadZones();
+    } catch {
+      Alert.alert('Error', 'Could not update zone. Please try again.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   // Patient label screen position — computed synchronously from region + mapLayout
@@ -319,7 +362,7 @@ export default function SafeZonesScreen() {
                 <Marker
                   coordinate={{ latitude: zone.latitude, longitude: zone.longitude }}
                   title={zone.name}
-                  pinColor={colors.primary}
+                  pinColor={colors.secondary}
                 />
               </React.Fragment>
             ) : (
@@ -381,6 +424,29 @@ export default function SafeZonesScreen() {
             </View>
           </View>
         )}
+
+        {/* Zone name labels — math overlay, same approach as patient label */}
+        {zones.map(zone => {
+          const center = zone.type === 'circle'
+            ? { latitude: zone.latitude, longitude: zone.longitude }
+            : polygonCentroid(
+                Array.isArray(zone.coordinates) ? zone.coordinates : JSON.parse(zone.coordinates || '[]')
+              );
+          if (!center) return null;
+          const pt = coordinateToPoint(center);
+          if (!pt) return null;
+          return (
+            <View
+              key={`label-${zone.id}`}
+              pointerEvents="none"
+              style={[styles.zoneLabelWrap, { left: pt.x - 45, top: pt.y + 6 }]}
+            >
+              <View style={styles.zoneNameTag}>
+                <Text style={styles.zoneNameTagText} numberOfLines={1}>{zone.name}</Text>
+              </View>
+            </View>
+          );
+        })}
 
         {/* Web-only tap overlay — View responder sits above Leaflet canvas; onResponderGrant has reliable locationX/Y */}
         {Platform.OS === 'web' && drawMode !== DRAW_MODES.NONE && (
@@ -456,6 +522,9 @@ export default function SafeZonesScreen() {
                     {zone.type === 'circle' ? `Circle · ${zone.radius || 500}m radius` : 'Polygon zone'}
                   </Text>
                 </View>
+                <TouchableOpacity onPress={() => openEdit(zone)} style={styles.editBtn} activeOpacity={0.7}>
+                  <Text style={styles.editBtnText}>✎</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => confirmDelete(zone)} style={styles.deleteBtn} activeOpacity={0.7}>
                   <Text style={styles.deleteBtnText}>✕</Text>
                 </TouchableOpacity>
@@ -516,6 +585,57 @@ export default function SafeZonesScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+      {/* Edit zone modal */}
+      <Modal visible={editModalVisible} transparent animationType="slide">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit Zone</Text>
+            <Text style={styles.modalSubtitle}>
+              {editingZone?.type === 'circle' ? 'Circle zone' : 'Polygon zone'}
+            </Text>
+            <TextInput
+              style={styles.nameInput}
+              placeholder="Zone name"
+              placeholderTextColor={colors.textLight}
+              value={editName}
+              onChangeText={setEditName}
+              autoFocus
+              maxLength={40}
+            />
+            {editingZone?.type === 'circle' && (
+              <View style={styles.radiusRow}>
+                <Text style={styles.radiusLabel}>Radius (meters)</Text>
+                <TextInput
+                  style={styles.radiusInput}
+                  keyboardType="numeric"
+                  value={editRadius}
+                  onChangeText={setEditRadius}
+                  maxLength={5}
+                />
+              </View>
+            )}
+            <TouchableOpacity
+              style={[styles.saveBtn, editSaving && styles.addBtnDisabled]}
+              onPress={saveEdit}
+              disabled={editSaving}
+              activeOpacity={0.85}
+            >
+              {editSaving
+                ? <ActivityIndicator color={colors.white} />
+                : <Text style={styles.saveBtnText}>Save Changes</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalCancelBtn}
+              onPress={() => { setEditModalVisible(false); setEditingZone(null); }}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -547,6 +667,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   patientNameText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  zoneLabelWrap: { position: 'absolute', width: 90, alignItems: 'center' },
+  zoneNameTag: {
+    backgroundColor: 'rgba(16,185,129,0.85)',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  zoneNameTagText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   mapStyleBtn: {
     position: 'absolute',
     bottom: 14,
@@ -590,6 +718,8 @@ const styles = StyleSheet.create({
   zoneInfo: { flex: 1 },
   zoneName: { fontSize: 15, fontWeight: '700', color: colors.text },
   zoneMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  editBtn: { backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6 },
+  editBtnText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
   deleteBtn: { backgroundColor: colors.dangerLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   deleteBtnText: { color: colors.danger, fontWeight: '700', fontSize: 14 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
