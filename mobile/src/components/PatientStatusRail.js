@@ -69,10 +69,10 @@ const styles = StyleSheet.create({
   rail: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'center',
     gap: 5,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginHorizontal: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     marginTop: 8,
     marginBottom: 4,
     backgroundColor: colors.surface,

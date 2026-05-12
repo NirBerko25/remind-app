@@ -59,9 +59,8 @@ export default function SOSButton({ onPress, disabled = false }) {
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: '100%',
+    alignSelf: 'center',
     position: 'relative',
-    alignItems: 'center',
   },
   glowRing: {
     position: 'absolute',
@@ -73,7 +72,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.2)',
   },
   touchable: {
-    width: '100%',
     borderRadius: 36,
     overflow: 'hidden',
     shadowColor: colors.danger,
@@ -83,12 +81,12 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   gradient: {
-    height: 72,
+    height: 68,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: 36,
     borderRadius: 36,
   },
   icon: {
