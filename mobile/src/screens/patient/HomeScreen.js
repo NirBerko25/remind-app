@@ -885,19 +885,22 @@ const styles = StyleSheet.create({
 
   // Info cards — centered wrapping grid
   infoGrid: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignContent: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 4,
     gap: 12,
   },
   infoCard: {
     backgroundColor: colors.surface,
-    borderRadius: 28,
-    padding: 18,
-    width: 170,
+    borderRadius: 22,
+    padding: 16,
+    width: 160,
+    height: 150,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.borderLight,
     shadowColor: '#000',
@@ -930,7 +933,7 @@ const styles = StyleSheet.create({
   waveBar: { width: 5, height: 32, borderRadius: 3, backgroundColor: colors.primary },
 
   // Mic area
-  micArea: { alignItems: 'center', paddingVertical: 14 },
+  micArea: { alignItems: 'center', paddingVertical: 8 },
   micLabel: { marginTop: 12, fontSize: 17, color: colors.textMuted, fontWeight: '500' },
   stopButton: {
     marginTop: 12,
