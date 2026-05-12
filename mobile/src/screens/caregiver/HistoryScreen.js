@@ -33,9 +33,14 @@ function getConversationFlag(conversation) {
   return null;
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
+function toMs(value) {
+  const n = Number(value);
+  return n < 1e12 ? n * 1000 : n;
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(toMs(value));
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',

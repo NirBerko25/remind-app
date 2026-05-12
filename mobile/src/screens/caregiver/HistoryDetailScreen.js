@@ -25,10 +25,14 @@ function detectMessageState(text) {
   return null;
 }
 
-function formatTimestamp(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
+function toMs(value) {
+  const n = Number(value);
+  return n < 1e12 ? n * 1000 : n;
+}
+
+function formatTimestamp(value) {
+  if (!value) return '';
+  return new Date(toMs(value)).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
