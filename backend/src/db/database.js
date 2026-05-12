@@ -104,6 +104,7 @@ function setupDatabase() {
   try { database.exec(`ALTER TABLE conversations ADD COLUMN summary TEXT`); } catch {}
   try { database.exec(`ALTER TABLE sos_events ADD COLUMN resolved_at INTEGER`); } catch {}
   try { database.exec(`ALTER TABLE location_breaches ADD COLUMN resolved_at INTEGER`); } catch {}
+  try { database.exec(`ALTER TABLE patients ADD COLUMN last_safe_at INTEGER DEFAULT 0`); } catch {}
 
   // Seed default demo patient if not exists
   const existing = database.prepare('SELECT id FROM patients WHERE id = ?').get('demo-patient-1');

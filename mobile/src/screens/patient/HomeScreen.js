@@ -23,7 +23,7 @@ import SOSButton from '../../components/SOSButton';
 import ConversationBubble from '../../components/ConversationBubble';
 import LocationStatusBanner from '../../components/LocationStatusBanner';
 import AIFace from '../../components/AIFace';
-import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones, reportLocationBreach } from '../../services/api';
+import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones, reportLocationBreach, reportLocationSafe } from '../../services/api';
 import { speakText, stopSpeaking, warmUpSpeech } from '../../services/speech';
 import { API_BASE_URL } from '../../constants/config';
 import { startGeofencing, stopGeofencing, updateZonesCache, isInsideZone } from '../../services/geofencing';
@@ -116,7 +116,9 @@ export default function PatientHomeScreen() {
 
         const { latitude, longitude } = loc.coords;
         const inZone = zones.some(z => isInsideZone(z, latitude, longitude));
-        if (!inZone) {
+        if (inZone) {
+          reportLocationSafe(patientId).catch(() => {});
+        } else {
           const now = Date.now();
           if (now - lastBreachRef.current < FOREGROUND_COOLDOWN_MS) return;
           lastBreachRef.current = now;

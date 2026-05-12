@@ -3,20 +3,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { useApp } from '../context/AppContext';
-import { getPatientCurrentLocation, getLocationBreaches, getContext } from '../services/api';
+import { getLocationStatus, getContext } from '../services/api';
 
-function formatSeen(ts) {
-  if (!ts) return null;
-  const m = Math.floor((Date.now() - ts) / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  return `${Math.floor(m / 60)}h ago`;
-}
 
 export default function PatientStatusRail() {
   const { patientId } = useApp();
   const [patientName, setPatientName] = useState('Patient');
-  const [lastSeenAt, setLastSeenAt] = useState(null);
   const [breached, setBreached] = useState(false);
 
   useEffect(() => {
@@ -28,23 +20,14 @@ export default function PatientStatusRail() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const loc = await getPatientCurrentLocation(patientId);
-        if (loc?.lastSeenAt) setLastSeenAt(loc.lastSeenAt);
-      } catch {}
-      try {
-        const list = await getLocationBreaches(patientId);
-        const recent = Array.isArray(list) && list.length > 0
-          && (Date.now() - (list[0].triggered_at * 1000 || 0)) < 10 * 60 * 1000;
-        setBreached(!!recent);
+        const status = await getLocationStatus(patientId);
+        setBreached(!status.isSafe);
       } catch {}
     };
     poll();
     const t = setInterval(poll, 15000);
     return () => clearInterval(t);
   }, [patientId]);
-
-  const seen = formatSeen(lastSeenAt);
-  const safe = !breached;
 
   return (
     <View style={[styles.rail, breached && styles.railBreached]}>
@@ -55,12 +38,6 @@ export default function PatientStatusRail() {
       <Text style={[styles.status, breached && styles.statusBreached]}>
         {breached ? 'Left safe zone' : 'Safe'}
       </Text>
-      {seen && (
-        <>
-          <Text style={styles.sep}>·</Text>
-          <Text style={styles.seen}>{seen}</Text>
-        </>
-      )}
     </View>
   );
 }
@@ -109,5 +86,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statusBreached: { color: colors.amber, fontWeight: '600' },
-  seen: { fontSize: 11, color: colors.textMuted },
 });

@@ -215,3 +215,13 @@ export async function resolveLocationBreach(breachId) {
   const response = await apiClient.patch(`/location/breaches/${breachId}/resolve`);
   return response.data;
 }
+
+export async function reportLocationSafe(patientId) {
+  const response = await apiClient.post('/location/safe', { patientId });
+  return response.data;
+}
+
+export async function getLocationStatus(patientId) {
+  const response = await apiClient.get(`/location/status/${patientId}`);
+  return response.data;
+}

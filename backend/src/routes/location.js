@@ -76,6 +76,45 @@ router.get('/breaches', (req, res) => {
   }
 });
 
+// POST /api/location/safe — patient device reports being inside a safe zone
+router.post('/safe', (req, res) => {
+  try {
+    const { patientId } = req.body;
+    if (!patientId) return res.status(400).json({ error: 'patientId is required' });
+    const db = getDb();
+    db.prepare('UPDATE patients SET last_safe_at = unixepoch() WHERE id = ?').run(patientId);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[Location] Safe checkin error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/location/status/:patientId — returns breach + safe timestamps for status rail
+router.get('/status/:patientId', (req, res) => {
+  try {
+    const { patientId } = req.params;
+    const db = getDb();
+    const patient = db.prepare('SELECT last_safe_at FROM patients WHERE id = ?').get(patientId);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    const breach = db.prepare(
+      `SELECT triggered_at, resolved_at FROM location_breaches
+       WHERE patient_id = ? ORDER BY triggered_at DESC LIMIT 1`
+    ).get(patientId);
+
+    const lastBreachAt = breach?.triggered_at ?? 0;
+    const lastSafeAt = patient.last_safe_at ?? 0;
+    // Safe when: no breach ever, or patient returned after breach, or breach was resolved
+    const isSafe = !lastBreachAt || lastSafeAt > lastBreachAt || !!breach?.resolved_at;
+
+    return res.json({ lastBreachAt, lastSafeAt, isSafe });
+  } catch (err) {
+    console.error('[Location] Status error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // PATCH /api/location/breaches/:id/resolve
 router.patch('/breaches/:id/resolve', (req, res) => {
   try {
