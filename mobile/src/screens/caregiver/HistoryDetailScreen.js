@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 14,
   },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,

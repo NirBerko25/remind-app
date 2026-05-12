@@ -309,11 +309,13 @@ export default function AlertsScreen() {
 
       {/* Active alerts count banner */}
       {activeAlerts.length > 0 && (
-        <View style={styles.activeBanner}>
-          <View style={styles.activeBannerDot} />
-          <Text style={styles.activeBannerText}>
-            {activeAlerts.length} active alert{activeAlerts.length !== 1 ? 's' : ''} require attention
-          </Text>
+        <View style={styles.activeBannerWrap}>
+          <View style={styles.activeBanner}>
+            <View style={styles.activeBannerDot} />
+            <Text style={styles.activeBannerText}>
+              {activeAlerts.length} active alert{activeAlerts.length !== 1 ? 's' : ''} require attention
+            </Text>
+          </View>
         </View>
       )}
 
@@ -423,16 +425,27 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  activeBannerWrap: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 2,
+  },
   activeBanner: {
     backgroundColor: '#FEF2F2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FECACA',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECACA',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   activeBannerDot: {
     width: 8,

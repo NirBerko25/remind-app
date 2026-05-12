@@ -260,21 +260,27 @@ export default function ContextScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
-        {isDirty && (
-          <View style={styles.dirtyBanner}>
-            <Ionicons name="ellipse" size={8} color="#B45309" />
-            <Text style={styles.dirtyBannerText}>Unsaved changes</Text>
-          </View>
-        )}
-        {saveSuccess && (
-          <View style={styles.successBanner}>
-            <Ionicons name="checkmark-circle" size={14} color="#166534" />
-            <Text style={styles.successBannerText}>Saved successfully</Text>
-          </View>
-        )}
-        {error && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorBannerText}>{error}</Text>
+        {/* Status pill strip */}
+        {(isDirty || saveSuccess || error) && (
+          <View style={styles.statusStrip}>
+            {isDirty && (
+              <View style={styles.dirtyBanner}>
+                <Ionicons name="ellipse" size={8} color="#B45309" />
+                <Text style={styles.dirtyBannerText}>Unsaved changes</Text>
+              </View>
+            )}
+            {saveSuccess && (
+              <View style={styles.successBanner}>
+                <Ionicons name="checkmark-circle" size={14} color="#166534" />
+                <Text style={styles.successBannerText}>Saved</Text>
+              </View>
+            )}
+            {error && (
+              <View style={styles.errorBanner}>
+                <Ionicons name="warning-outline" size={14} color="#991B1B" />
+                <Text style={styles.errorBannerText}>{error}</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -284,6 +290,26 @@ export default function ContextScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* ── Profile Hero ── */}
+          <LinearGradient
+            colors={colors.gradientPrimary}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.profileHero}
+          >
+            <View style={styles.profileAvatar}>
+              <Ionicons name="person" size={28} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.profileHeroName} numberOfLines={1}>
+                {context.name || 'Patient Profile'}
+              </Text>
+              {!!context.age && (
+                <Text style={styles.profileHeroSub}>Age {context.age}</Text>
+              )}
+            </View>
+          </LinearGradient>
+
           {/* ── Basic Information ── */}
           <SectionLabel title="Basic Information" icon="person-outline" />
           <FormCard>
@@ -493,37 +519,87 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   loadingText: { marginTop: 12, fontSize: 17, color: colors.textMuted },
 
-  // Status banners
+  // Status pill strip
+  statusStrip: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+    justifyContent: 'center',
+  },
   dirtyBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  dirtyBannerText: { fontSize: 13, color: '#92400E', fontWeight: '600' },
+  dirtyBannerText: { fontSize: 12, color: '#92400E', fontWeight: '600' },
   successBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: '#DCFCE7',
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderBottomWidth: 1,
-    borderBottomColor: '#BBF7D0',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  successBannerText: { fontSize: 13, color: '#166534', fontWeight: '600' },
+  successBannerText: { fontSize: 12, color: '#166534', fontWeight: '600' },
   errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: colors.dangerLight,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FECACA',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  errorBannerText: { fontSize: 13, color: '#991B1B', fontWeight: '500' },
+  errorBannerText: { fontSize: 12, color: '#991B1B', fontWeight: '500' },
+
+  // Profile hero card
+  profileHero: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  profileAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileHeroName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.white,
+    letterSpacing: 0.2,
+  },
+  profileHeroSub: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+    fontWeight: '500',
+  },
 
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingTop: 12 },
