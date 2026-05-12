@@ -579,12 +579,7 @@ export default function PatientHomeScreen() {
           ))}
         </ScrollView>
       ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.infoScroll}
-          contentContainerStyle={styles.infoScrollContent}
-        >
+        <View style={styles.infoGrid}>
           {patientContext?.medications?.length > 0 && (
             <View style={styles.infoCard}>
               <View style={styles.infoCardHeader}>
@@ -630,7 +625,7 @@ export default function PatientHomeScreen() {
               <Text style={styles.infoCardBody} numberOfLines={6}>{patientContext.notes}</Text>
             </View>
           )}
-        </ScrollView>
+        </View>
       )}
 
       {/* ── Waveform ── */}
@@ -888,19 +883,21 @@ const styles = StyleSheet.create({
   messagesContainer: { flex: 1, paddingHorizontal: 12 },
   messagesContent: { paddingVertical: 16, flexGrow: 1, justifyContent: 'flex-end' },
 
-  // Info cards (horizontal scroll, empty state)
-  infoScroll: { height: 230 },
-  infoScrollContent: {
-    paddingHorizontal: 16,
+  // Info cards — centered wrapping grid
+  infoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 12,
     paddingVertical: 8,
     gap: 12,
-    alignItems: 'stretch',
   },
   infoCard: {
     backgroundColor: colors.surface,
     borderRadius: 28,
     padding: 18,
-    width: 200,
+    width: 170,
     borderWidth: 1,
     borderColor: colors.borderLight,
     shadowColor: '#000',
