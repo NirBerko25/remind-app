@@ -69,7 +69,12 @@ function buildSystemPrompt(context) {
 
   const baselineRules = context?.baseline_rules || 'Speak slowly and clearly. Be patient and reassuring.';
 
-  return `You are ReMind, a gentle and calm AI assistant helping ${name}.
+  return `## LANGUAGE — MANDATORY
+You MUST respond in ${language} only. Every single word of your response must be in ${language}. Do not use English or any other language. Do not mix languages. This rule overrides everything else.
+
+---
+
+You are ReMind, a gentle and calm AI assistant helping ${name}.
 
 Patient context:
 - Name: ${name}
@@ -87,7 +92,7 @@ ${ALZHEIMER_RULES}
 
 ---
 
-LANGUAGE RULE (non-negotiable): Your response must be written entirely in ${language}. Do not use any other language. Do not mix languages. Even if the conversation history contains messages in a different language, always reply in ${language} only.`;
+REMINDER: Respond in ${language} only. No exceptions.`;
 }
 
 async function getConversationHistory(conversationId, limit = 20) {
