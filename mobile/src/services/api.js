@@ -210,3 +210,8 @@ export async function getLocationBreaches(patientId) {
   const response = await apiClient.get(url);
   return response.data;
 }
+
+export async function resolveLocationBreach(breachId) {
+  const response = await apiClient.patch(`/location/breaches/${breachId}/resolve`);
+  return response.data;
+}

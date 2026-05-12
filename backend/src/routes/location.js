@@ -53,11 +53,15 @@ router.get('/breaches', (req, res) => {
     const { patientId } = req.query;
     const db = getDb();
     const query = patientId
-      ? `SELECT b.*, p.name as patient_name FROM location_breaches b
+      ? `SELECT b.*, p.name as patient_name,
+           CASE WHEN b.resolved_at IS NOT NULL THEN 1 ELSE 0 END as resolved
+         FROM location_breaches b
          JOIN patients p ON p.id = b.patient_id
          WHERE b.patient_id = ?
          ORDER BY b.triggered_at DESC LIMIT 50`
-      : `SELECT b.*, p.name as patient_name FROM location_breaches b
+      : `SELECT b.*, p.name as patient_name,
+           CASE WHEN b.resolved_at IS NOT NULL THEN 1 ELSE 0 END as resolved
+         FROM location_breaches b
          JOIN patients p ON p.id = b.patient_id
          ORDER BY b.triggered_at DESC LIMIT 50`;
 
@@ -68,6 +72,21 @@ router.get('/breaches', (req, res) => {
     return res.json(breaches);
   } catch (err) {
     console.error('[Location] Breaches fetch error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PATCH /api/location/breaches/:id/resolve
+router.patch('/breaches/:id/resolve', (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDb();
+    const breach = db.prepare('SELECT id FROM location_breaches WHERE id = ?').get(id);
+    if (!breach) return res.status(404).json({ error: 'Breach not found' });
+    db.prepare('UPDATE location_breaches SET resolved_at = ? WHERE id = ?').run(Date.now(), id);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[Location] Resolve error:', err.message);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

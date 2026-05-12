@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
-import { getAlerts, resolveAlert, getLocationBreaches } from '../../services/api';
+import { getAlerts, resolveAlert, getLocationBreaches, resolveLocationBreach } from '../../services/api';
 import { useApp } from '../../context/AppContext';
 import { API_BASE_URL } from '../../constants/config';
 
@@ -68,7 +68,11 @@ function AlertCard({ alert, onResolve }) {
   const handleResolve = async () => {
     setResolving(true);
     try {
-      await resolveAlert(alert.id || alert._id);
+      if (isBreach) {
+        await resolveLocationBreach(alert.id || alert._id);
+      } else {
+        await resolveAlert(alert.id || alert._id);
+      }
       onResolve(alert.id || alert._id);
     } catch (_) {
       setResolving(false);
@@ -121,17 +125,19 @@ function AlertCard({ alert, onResolve }) {
         ) : isBreach ? (
           <Text style={styles.cardNote}>{patientName} left their safe zone.</Text>
         ) : null}
-        {!resolved && !isBreach && (
+        {!resolved && (
           <TouchableOpacity
-            style={styles.resolveButton}
+            style={[styles.resolveButton, isBreach && styles.resolveButtonBreach]}
             onPress={handleResolve}
             disabled={resolving}
             activeOpacity={0.8}
           >
             {resolving ? (
-              <ActivityIndicator size="small" color={colors.secondary} />
+              <ActivityIndicator size="small" color={isBreach ? colors.amber : colors.secondary} />
             ) : (
-              <Text style={styles.resolveButtonText}>✓ Mark as Handled</Text>
+              <Text style={[styles.resolveButtonText, isBreach && styles.resolveButtonTextBreach]}>
+                ✓ Mark as Handled
+              </Text>
             )}
           </TouchableOpacity>
         )}
@@ -614,10 +620,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  resolveButtonBreach: {
+    borderColor: colors.amber,
+  },
   resolveButtonText: {
     fontSize: 14,
     color: colors.secondary,
     fontWeight: '700',
+  },
+  resolveButtonTextBreach: {
+    color: colors.amber,
   },
   resolvedAt: {
     fontSize: 12,
