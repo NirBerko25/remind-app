@@ -522,7 +522,7 @@ export default function PatientHomeScreen() {
           <Text style={styles.exitText}>Exit</Text>
         </TouchableOpacity>
         <Text style={styles.topClock}>{currentTime}</Text>
-        <View style={{ width: 60 }} />
+        <LocationStatusBanner patientId={patientId} />
       </View>
 
       {/* ── AI Avatar card ── */}
@@ -543,9 +543,6 @@ export default function PatientHomeScreen() {
           <Text style={styles.dateSmall}>{getCurrentDate()}</Text>
         </View>
       </View>
-
-      {/* ── Location banner ── */}
-      <LocationStatusBanner patientId={patientId} />
 
       {/* ── Care alert ── */}
       {showCareAlert && (
@@ -794,7 +791,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
   exitBtn: {
     flexDirection: 'row',
