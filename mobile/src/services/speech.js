@@ -73,7 +73,7 @@ function isHebrew(text) {
 export async function speakText(text, options = {}) {
   if (!text || text.trim().length === 0) return;
 
-  const hebrew = isHebrew(text);
+  const hebrew = options.language === 'he' || (options.language == null && isHebrew(text));
   const lang = hebrew ? 'he-IL' : 'en-US';
 
   if (Platform.OS === 'web' && typeof window !== 'undefined' && window.speechSynthesis) {

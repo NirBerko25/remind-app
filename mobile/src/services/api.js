@@ -48,7 +48,7 @@ export async function sendMessage(patientId, message, conversationId = null) {
  * @param {string} audioUri - local file URI from expo-av
  * @returns {{ transcript: string }}
  */
-export async function transcribeAudio(audioUri) {
+export async function transcribeAudio(audioUri, language = 'he') {
   const formData = new FormData();
 
   if (typeof document !== 'undefined') {
@@ -64,6 +64,8 @@ export async function transcribeAudio(audioUri) {
     const type = match ? `audio/${match[1]}` : 'audio/m4a';
     formData.append('audio', { uri: audioUri, name: filename || 'recording.m4a', type });
   }
+
+  formData.append('language', language);
 
   const response = await apiClient.post('/transcribe', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -173,5 +175,38 @@ export async function getAlerts() {
  */
 export async function resolveAlert(alertId) {
   const response = await apiClient.patch(`/sos/alerts/${alertId}/resolve`);
+  return response.data;
+}
+
+// ── Safe Zones ────────────────────────────────────────────────────────────────
+
+export async function getSafeZones(patientId) {
+  const response = await apiClient.get(`/safezones/${patientId}`);
+  return response.data;
+}
+
+export async function createSafeZone(patientId, zone) {
+  const response = await apiClient.post(`/safezones/${patientId}`, zone);
+  return response.data;
+}
+
+export async function updateSafeZone(patientId, zoneId, updates) {
+  const response = await apiClient.patch(`/safezones/${patientId}/${zoneId}`, updates);
+  return response.data;
+}
+
+export async function deleteSafeZone(patientId, zoneId) {
+  const response = await apiClient.delete(`/safezones/${patientId}/${zoneId}`);
+  return response.data;
+}
+
+export async function reportLocationBreach(patientId, latitude, longitude) {
+  const response = await apiClient.post('/location/breach', { patientId, latitude, longitude });
+  return response.data;
+}
+
+export async function getLocationBreaches(patientId) {
+  const url = patientId ? `/location/breaches?patientId=${patientId}` : '/location/breaches';
+  const response = await apiClient.get(url);
   return response.data;
 }

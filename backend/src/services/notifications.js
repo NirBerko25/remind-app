@@ -60,4 +60,34 @@ async function sendSOSNotifications(patientId) {
   return successCount;
 }
 
-module.exports = { sendSOSNotifications };
+async function sendBreachNotifications(patientId) {
+  const db = getDb();
+
+  const patient = db.prepare('SELECT name FROM patients WHERE id = ?').get(patientId);
+  const patientName = patient?.name || 'Patient';
+
+  const caregiverDevices = db.prepare(`
+    SELECT expo_push_token FROM devices
+    WHERE patient_id = ? AND role = 'caregiver'
+  `).all(patientId);
+
+  if (caregiverDevices.length === 0) return 0;
+
+  const title = '⚠️ Safe Zone Alert';
+  const body = `${patientName} may have wandered outside their safe zone.`;
+
+  const results = await Promise.all(
+    caregiverDevices.map(device =>
+      sendExpoNotification(device.expo_push_token, title, body).catch(err => {
+        console.error(`[Notifications] Breach notify failed for ${device.expo_push_token}:`, err.message);
+        return null;
+      })
+    )
+  );
+
+  const successCount = results.filter(r => r !== null).length;
+  console.log(`[Notifications] Sent breach alert to ${successCount}/${caregiverDevices.length} caregivers for patient ${patientId}`);
+  return successCount;
+}
+
+module.exports = { sendSOSNotifications, sendBreachNotifications };

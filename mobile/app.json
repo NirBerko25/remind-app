@@ -12,11 +12,26 @@
       "supportsTablet": false,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "ReMind needs microphone access for voice interaction",
-        "NSSpeechRecognitionUsageDescription": "ReMind needs speech recognition for voice input"
+        "NSSpeechRecognitionUsageDescription": "ReMind needs speech recognition for voice input",
+        "NSLocationWhenInUseUsageDescription": "ReMind uses your location to show where you are and keep you safe.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "ReMind monitors your location in the background so caregivers are notified if you wander outside a safe zone.",
+        "UIBackgroundModes": ["location", "fetch"]
       }
     },
     "android": {
-      "permissions": ["RECORD_AUDIO", "VIBRATE"]
+      "permissions": [
+        "RECORD_AUDIO",
+        "VIBRATE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      }
     },
     "plugins": [
       "expo-av",
@@ -24,6 +39,14 @@
         "expo-notifications",
         {
           "color": "#2C7BE5"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow ReMind to track your location for safety monitoring.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
         }
       ]
     ]
