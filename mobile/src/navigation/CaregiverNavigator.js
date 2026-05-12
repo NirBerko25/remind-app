@@ -9,6 +9,7 @@ import HistoryScreen from '../screens/caregiver/HistoryScreen';
 import HistoryDetailScreen from '../screens/caregiver/HistoryDetailScreen';
 import ContextScreen from '../screens/caregiver/ContextScreen';
 import AlertsScreen from '../screens/caregiver/AlertsScreen';
+import SafeZonesScreen from '../screens/caregiver/SafeZonesScreen';
 import { colors } from '../constants/colors';
 
 const Tab = createBottomTabNavigator();
@@ -130,6 +131,21 @@ export default function CaregiverNavigator() {
           headerLeft: () => <BackToRoleButton />,
           tabBarIcon: ({ focused }) => (
             <TabIcon emoji="🔔" label="Alerts" focused={focused} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="SafeZones"
+        component={SafeZonesScreen}
+        options={{
+          headerShown: true,
+          headerTitle: 'Safe Zones',
+          headerStyle: { backgroundColor: colors.primaryDark },
+          headerTintColor: colors.white,
+          headerTitleStyle: { fontWeight: '700', fontSize: 18, color: colors.white },
+          headerLeft: () => <BackToRoleButton />,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon emoji="🗺️" label="Zones" focused={focused} />
           ),
         }}
       />

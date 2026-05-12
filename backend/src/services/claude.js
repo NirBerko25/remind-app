@@ -39,6 +39,7 @@ function buildSystemPrompt(context) {
   const age = context?.age || 'unknown age';
   const address = context?.address || 'address not provided';
   const dailyRoutine = context?.daily_routine || 'routine not specified';
+  const language = context?.language === 'en' ? 'English' : 'Hebrew';
 
   let familyStr = 'not specified';
   if (context?.family) {
@@ -70,8 +71,6 @@ function buildSystemPrompt(context) {
 
   return `You are ReMind, a gentle and calm AI assistant helping ${name}.
 
-IMPORTANT: Always respond in Hebrew, regardless of what language the patient uses.
-
 Patient context:
 - Name: ${name}
 - Age: ${age}
@@ -84,7 +83,11 @@ Caregiver instructions: ${baselineRules}
 
 ---
 
-${ALZHEIMER_RULES}`;
+${ALZHEIMER_RULES}
+
+---
+
+LANGUAGE RULE (non-negotiable): Your response must be written entirely in ${language}. Do not use any other language. Do not mix languages. Even if the conversation history contains messages in a different language, always reply in ${language} only.`;
 }
 
 async function getConversationHistory(conversationId, limit = 20) {

@@ -20,9 +20,12 @@ import { colors } from '../../constants/colors';
 import VoiceButton from '../../components/VoiceButton';
 import SOSButton from '../../components/SOSButton';
 import ConversationBubble from '../../components/ConversationBubble';
-import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong } from '../../services/api';
+import LocationStatusBanner from '../../components/LocationStatusBanner';
+import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones, reportLocationBreach } from '../../services/api';
 import { speakText, stopSpeaking, warmUpSpeech } from '../../services/speech';
 import { API_BASE_URL } from '../../constants/config';
+import { startGeofencing, stopGeofencing, updateZonesCache, isInsideZone } from '../../services/geofencing';
+import * as Location from 'expo-location';
 
 const MIC_STATES = {
   IDLE: 'idle',
@@ -88,6 +91,55 @@ export default function PatientHomeScreen() {
     };
   }, []);
 
+  // Foreground location polling — works on web and native, always uses fresh zone data
+  const lastBreachRef = useRef(0);
+  const FOREGROUND_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes between alerts
+  const POLL_INTERVAL_MS = 20 * 1000; // check every 20s
+
+  useEffect(() => {
+    if (!patientId) return;
+
+    const checkLocation = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+
+        const [loc, zones] = await Promise.all([
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          getSafeZones(patientId),
+        ]);
+
+        updateZonesCache(zones);
+        if (!zones.length) return;
+
+        const { latitude, longitude } = loc.coords;
+        const inZone = zones.some(z => isInsideZone(z, latitude, longitude));
+        if (!inZone) {
+          const now = Date.now();
+          if (now - lastBreachRef.current < FOREGROUND_COOLDOWN_MS) return;
+          lastBreachRef.current = now;
+          await reportLocationBreach(patientId, latitude, longitude);
+        }
+      } catch {
+        // location is non-critical
+      }
+    };
+
+    // Kick off immediately, then poll
+    checkLocation();
+    const interval = setInterval(checkLocation, POLL_INTERVAL_MS);
+
+    // Also start native background task (no-op on web)
+    getSafeZones(patientId)
+      .then(zones => { if (zones.length > 0) startGeofencing(); })
+      .catch(() => {});
+
+    return () => {
+      clearInterval(interval);
+      stopGeofencing();
+    };
+  }, [patientId]);
+
   // Load patient context on mount
   useEffect(() => {
     if (!patientId) return;
@@ -105,6 +157,7 @@ export default function PatientHomeScreen() {
           familyMembers: Array.isArray(data.family) ? data.family : [],
           notes: data.notes || '',
           favoriteSong: data.favoriteSong || null,
+          language: data.language || 'he',
         });
       })
       .catch(() => {}); // fail silently — context is optional
@@ -285,7 +338,7 @@ export default function PatientHomeScreen() {
         setMicLabel('Tap to talk');
       };
       speakFallbackRef.current = setTimeout(resetToIdle, aiText.length * 90 + 3000);
-      speakText(aiText, { onDone: resetToIdle, onStopped: resetToIdle, onError: resetToIdle })
+      speakText(aiText, { language: patientContext?.language, onDone: resetToIdle, onStopped: resetToIdle, onError: resetToIdle })
         .catch(() => resetToIdle());
     } catch (err) {
       console.error('Voice flow error:', err);
@@ -398,7 +451,7 @@ export default function PatientHomeScreen() {
 
       let transcript = null;
       try {
-        const result = await transcribeAudio(uri);
+        const result = await transcribeAudio(uri, patientContext?.language || 'he');
         transcript = result.transcript;
       } catch (err) {
         console.error('Transcription error:', err);
@@ -470,6 +523,9 @@ export default function PatientHomeScreen() {
         <Text style={styles.dateText}>{getCurrentDate()}</Text>
         <Text style={styles.timeText}>{currentTime}</Text>
       </LinearGradient>
+
+      {/* Location Status Banner */}
+      <LocationStatusBanner patientId={patientId} />
 
       {/* Care Alert Banner */}
       {showCareAlert && (

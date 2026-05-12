@@ -54,6 +54,7 @@ router.get('/:patientId', (req, res) => {
       baselineRules: context.baseline_rules,
       notes: context.notes,
       favoriteSong: context.favorite_song || null,
+      language: context.language || 'he',
     });
   } catch (err) {
     console.error('[Context] GET Error:', err.message);
@@ -76,6 +77,7 @@ router.put('/:patientId', (req, res) => {
       baselineRules,
       notes,
       favoriteSong,
+      language,
     } = req.body;
 
     const db = getDb();
@@ -106,25 +108,26 @@ router.put('/:patientId', (req, res) => {
           emergency_contacts = COALESCE(?, emergency_contacts),
           baseline_rules = COALESCE(?, baseline_rules),
           notes = COALESCE(?, notes),
-          favorite_song = COALESCE(?, favorite_song)
+          favorite_song = COALESCE(?, favorite_song),
+          language = COALESCE(?, language)
         WHERE patient_id = ?
       `).run(
         name ?? null, age ?? null, familyStr,
         dailyRoutine ?? null, medicationsStr, address ?? null,
         emergencyContactsStr, baselineRules ?? null, notes ?? null,
-        favoriteSong ?? null, patientId
+        favoriteSong ?? null, language ?? null, patientId
       );
     } else {
       db.prepare(`
         INSERT INTO patient_context (
           patient_id, name, age, family, daily_routine,
-          medications, address, emergency_contacts, baseline_rules, notes, favorite_song
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          medications, address, emergency_contacts, baseline_rules, notes, favorite_song, language
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         patientId, name ?? null, age ?? null, familyStr,
         dailyRoutine ?? null, medicationsStr, address ?? null,
         emergencyContactsStr, baselineRules ?? null, notes ?? null,
-        favoriteSong ?? null
+        favoriteSong ?? null, language ?? 'he'
       );
     }
 

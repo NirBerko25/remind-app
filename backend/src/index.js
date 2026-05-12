@@ -13,6 +13,8 @@ const contextRouter = require('./routes/context');
 const patientsRouter = require('./routes/patients');
 const devicesRouter = require('./routes/devices');
 const songRouter = require('./routes/song');
+const safezonesRouter = require('./routes/safezones');
+const locationRouter = require('./routes/location');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -35,6 +37,8 @@ app.use('/api/context', contextRouter);
 app.use('/api/patients', patientsRouter);
 app.use('/api/devices', devicesRouter);
 app.use('/api/song', songRouter);
+app.use('/api/safezones', safezonesRouter);
+app.use('/api/location', locationRouter);
 
 // 404 handler
 app.use((req, res) => {
@@ -47,19 +51,22 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Initialize database and start server
+// Initialize database (mocked during tests)
 setupDatabase();
 
-app.listen(PORT, () => {
-  console.log('');
-  console.log('╔══════════════════════════════════════╗');
-  console.log('║     ReMind Backend Server            ║');
-  console.log('╚══════════════════════════════════════╝');
-  console.log(`  Listening on http://localhost:${PORT}`);
-  console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`  Anthropic API: ${process.env.ANTHROPIC_API_KEY ? '✓ configured' : '✗ missing ANTHROPIC_API_KEY'}`);
-  console.log(`  OpenAI API:    ${process.env.OPENAI_API_KEY ? '✓ configured' : '⚠ missing (transcription disabled)'}`);
-  console.log('');
-});
+// Only bind to a port when run directly — not when required by tests
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log('');
+    console.log('╔══════════════════════════════════════╗');
+    console.log('║     ReMind Backend Server            ║');
+    console.log('╚══════════════════════════════════════╝');
+    console.log(`  Listening on http://localhost:${PORT}`);
+    console.log(`  Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`  Anthropic API: ${process.env.ANTHROPIC_API_KEY ? '✓ configured' : '✗ missing ANTHROPIC_API_KEY'}`);
+    console.log(`  OpenAI API:    ${process.env.OPENAI_API_KEY ? '✓ configured' : '⚠ missing (transcription disabled)'}`);
+    console.log('');
+  });
+}
 
 module.exports = app;
