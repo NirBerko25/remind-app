@@ -10,6 +10,7 @@ import HistoryDetailScreen from '../screens/caregiver/HistoryDetailScreen';
 import ContextScreen from '../screens/caregiver/ContextScreen';
 import AlertsScreen from '../screens/caregiver/AlertsScreen';
 import SafeZonesScreen from '../screens/caregiver/SafeZonesScreen';
+import PatientStatusRail from '../components/PatientStatusRail';
 import { colors } from '../constants/colors';
 
 const Tab = createBottomTabNavigator();
@@ -65,7 +66,9 @@ function HistoryStackNavigator() {
 
 export default function CaregiverNavigator() {
   return (
-    <Tab.Navigator
+    <View style={styles.root}>
+      <PatientStatusRail />
+      <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
@@ -129,10 +132,14 @@ export default function CaregiverNavigator() {
         }}
       />
     </Tab.Navigator>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -147,16 +154,17 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    height: 76,
-    paddingBottom: 8,
-    paddingTop: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 12,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    height: 80,
+    paddingBottom: 12,
+    paddingTop: 8,
+    shadowColor: '#1C2B3A',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    elevation: 24,
   },
   tabIconContainer: {
     alignItems: 'center',

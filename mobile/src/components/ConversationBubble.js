@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 4,
   },
   flagBadgeEmergency: {

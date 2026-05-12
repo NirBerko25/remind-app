@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 14,
   },
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 10,
   },
   urgentBadgeText: {
     fontSize: 10,
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 10,
   },
   breachBadgeText: {
     fontSize: 10,
@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 9,
     paddingHorizontal: 14,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: colors.secondary,
     alignSelf: 'flex-start',

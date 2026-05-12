@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primaryLight,
-    borderRadius: 10,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 6,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 14,
   },
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   flagBadgeEmergency: {

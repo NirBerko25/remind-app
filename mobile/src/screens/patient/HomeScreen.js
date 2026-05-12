@@ -22,6 +22,7 @@ import VoiceButton from '../../components/VoiceButton';
 import SOSButton from '../../components/SOSButton';
 import ConversationBubble from '../../components/ConversationBubble';
 import LocationStatusBanner from '../../components/LocationStatusBanner';
+import AIFace from '../../components/AIFace';
 import { sendMessage, transcribeAudio, triggerSOS, getContext, searchSong, getSafeZones, reportLocationBreach } from '../../services/api';
 import { speakText, stopSpeaking, warmUpSpeech } from '../../services/speech';
 import { API_BASE_URL } from '../../constants/config';
@@ -504,109 +505,70 @@ export default function PatientHomeScreen() {
     setMicLabel('Tap to talk');
   };
 
-  const lastAIMessage = [...messages].reverse().find((m) => m.sender === 'ai');
+  const stateLabel =
+    micState === MIC_STATES.LISTENING  ? "I'm listening..." :
+    micState === MIC_STATES.PROCESSING ? 'Just a moment...' :
+    micState === MIC_STATES.SPEAKING   ? "I'm speaking..."  :
+    messages.length > 0 ? 'Ready to listen' : 'How can I help you today?';
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
 
-      {/* Header */}
-      <LinearGradient
-        colors={colors.gradientHeader}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.header}
-      >
-        <TouchableOpacity style={styles.backButton} onPress={clearRole} activeOpacity={0.7}>
-          <Text style={styles.backButtonText}>← Switch Role</Text>
+      {/* ── Top bar ── */}
+      <View style={styles.topBar}>
+        <TouchableOpacity style={styles.exitBtn} onPress={clearRole} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={14} color={colors.textMuted} />
+          <Text style={styles.exitText}>Exit</Text>
         </TouchableOpacity>
-        <Text style={styles.greeting}>Hi, {patientContext?.name || patientName || 'Friend'}!</Text>
-        <Text style={styles.dateText}>{getCurrentDate()}</Text>
-        <Text style={styles.timeText}>{currentTime}</Text>
-      </LinearGradient>
+        <Text style={styles.topClock}>{currentTime}</Text>
+        <View style={{ width: 60 }} />
+      </View>
 
-      {/* Location Status Banner */}
+      {/* ── AI Avatar card ── */}
+      <View style={styles.avatarSection}>
+        <LinearGradient
+          colors={['#E8F2FF', '#F4F7FC']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={messages.length > 0 ? styles.avatarBubbleMini : styles.avatarBubble}
+        >
+          <AIFace micState={micState} mini={messages.length > 0} />
+        </LinearGradient>
+        <View style={styles.avatarMeta}>
+          <Text style={styles.greetingName}>
+            Hi, {patientContext?.name || patientName || 'Friend'}!
+          </Text>
+          <Text style={styles.stateText}>{stateLabel}</Text>
+          <Text style={styles.dateSmall}>{getCurrentDate()}</Text>
+        </View>
+      </View>
+
+      {/* ── Location banner ── */}
       <LocationStatusBanner patientId={patientId} />
 
-      {/* Care Alert Banner */}
+      {/* ── Care alert ── */}
       {showCareAlert && (
-        <TouchableOpacity
-          style={styles.careAlert}
-          onPress={() => setShowCareAlert(false)}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.careAlertText}>
-            You seem a little confused. If you need help, press the red button below.
-          </Text>
-          <Text style={styles.careAlertDismiss}>Tap to dismiss</Text>
+        <TouchableOpacity style={styles.careAlert} onPress={() => setShowCareAlert(false)} activeOpacity={0.8}>
+          <Ionicons name="warning" size={18} color="#92400E" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.careAlertText}>
+              You seem a little confused. If you need help, press the red button below.
+            </Text>
+            <Text style={styles.careAlertDismiss}>Tap to dismiss</Text>
+          </View>
         </TouchableOpacity>
       )}
 
-      {/* Conversation history */}
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.messagesContainer}
-        contentContainerStyle={styles.messagesContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {messages.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              Tap the blue button below{'\n'}and start talking to me!
-            </Text>
-
-            {/* Medications reminder */}
-            {patientContext?.medications?.length > 0 && (
-              <View style={styles.contextCard}>
-                <View style={styles.contextCardHeader}>
-                  <Ionicons name="medical-outline" size={15} color={colors.primary} />
-                  <Text style={styles.contextCardTitle}>Your Medications</Text>
-                </View>
-                {patientContext.medications.map((med, i) => (
-                  <Text key={i} style={styles.contextCardItem}>· {med}</Text>
-                ))}
-              </View>
-            )}
-
-            {/* Family members */}
-            {patientContext?.familyMembers?.length > 0 && (
-              <View style={styles.contextCard}>
-                <View style={styles.contextCardHeader}>
-                  <Ionicons name="people-outline" size={15} color={colors.primary} />
-                  <Text style={styles.contextCardTitle}>Your Family</Text>
-                </View>
-                {patientContext.familyMembers.map((m, i) => (
-                  <Text key={i} style={styles.contextCardItem}>
-                    · {m.name}{m.relation ? ` — ${m.relation}` : ''}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            {/* Daily routine */}
-            {!!patientContext?.dailyRoutine && (
-              <View style={styles.contextCard}>
-                <View style={styles.contextCardHeader}>
-                  <Ionicons name="time-outline" size={15} color={colors.primary} />
-                  <Text style={styles.contextCardTitle}>Your Daily Routine</Text>
-                </View>
-                <Text style={styles.contextCardBody}>{patientContext.dailyRoutine}</Text>
-              </View>
-            )}
-
-            {/* Notes */}
-            {!!patientContext?.notes && (
-              <View style={styles.contextCard}>
-                <View style={styles.contextCardHeader}>
-                  <Ionicons name="document-text-outline" size={15} color={colors.primary} />
-                  <Text style={styles.contextCardTitle}>Notes</Text>
-                </View>
-                <Text style={styles.contextCardBody}>{patientContext.notes}</Text>
-              </View>
-            )}
-          </View>
-        ) : (
-          messages.map((msg) => (
+      {/* ── Content: conversation OR info cards ── */}
+      {messages.length > 0 ? (
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.messagesContainer}
+          contentContainerStyle={styles.messagesContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {messages.map((msg) => (
             <ConversationBubble
               key={msg.id}
               text={msg.text}
@@ -614,11 +576,64 @@ export default function PatientHomeScreen() {
               timestamp={msg.timestamp}
               large={true}
             />
-          ))
-        )}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.infoScroll}
+          contentContainerStyle={styles.infoScrollContent}
+        >
+          {patientContext?.medications?.length > 0 && (
+            <View style={styles.infoCard}>
+              <View style={styles.infoCardHeader}>
+                <Ionicons name="medical-outline" size={15} color={colors.primary} />
+                <Text style={styles.infoCardTitle}>Medications</Text>
+              </View>
+              {patientContext.medications.slice(0, 4).map((med, i) => (
+                <Text key={i} style={styles.infoCardItem} numberOfLines={1}>· {med}</Text>
+              ))}
+              {patientContext.medications.length > 4 && (
+                <Text style={styles.infoCardMore}>+{patientContext.medications.length - 4} more</Text>
+              )}
+            </View>
+          )}
+          {patientContext?.familyMembers?.length > 0 && (
+            <View style={styles.infoCard}>
+              <View style={styles.infoCardHeader}>
+                <Ionicons name="people-outline" size={15} color={colors.secondary} />
+                <Text style={[styles.infoCardTitle, { color: colors.secondary }]}>Your Family</Text>
+              </View>
+              {patientContext.familyMembers.slice(0, 4).map((m, i) => (
+                <Text key={i} style={styles.infoCardItem} numberOfLines={1}>
+                  · {m.name}{m.relation ? ` — ${m.relation}` : ''}
+                </Text>
+              ))}
+            </View>
+          )}
+          {!!patientContext?.dailyRoutine && (
+            <View style={styles.infoCard}>
+              <View style={styles.infoCardHeader}>
+                <Ionicons name="time-outline" size={15} color={colors.amber} />
+                <Text style={[styles.infoCardTitle, { color: colors.amber }]}>Today's Routine</Text>
+              </View>
+              <Text style={styles.infoCardBody} numberOfLines={8}>{patientContext.dailyRoutine}</Text>
+            </View>
+          )}
+          {!!patientContext?.notes && (
+            <View style={styles.infoCard}>
+              <View style={styles.infoCardHeader}>
+                <Ionicons name="document-text-outline" size={15} color={colors.textMuted} />
+                <Text style={[styles.infoCardTitle, { color: colors.textMuted }]}>Notes</Text>
+              </View>
+              <Text style={styles.infoCardBody} numberOfLines={6}>{patientContext.notes}</Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
 
-      {/* Waveform (visible when listening) */}
+      {/* ── Waveform ── */}
       {micState === MIC_STATES.LISTENING && (
         <View style={styles.waveformContainer}>
           {waveAnims.map((anim, i) => (
@@ -627,14 +642,7 @@ export default function PatientHomeScreen() {
               style={[
                 styles.waveBar,
                 {
-                  transform: [
-                    {
-                      scaleY: anim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [0.2, 1],
-                      }),
-                    },
-                  ],
+                  transform: [{ scaleY: anim.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }],
                   opacity: anim,
                 },
               ]}
@@ -643,13 +651,9 @@ export default function PatientHomeScreen() {
         </View>
       )}
 
-      {/* Mic button area */}
+      {/* ── Mic area ── */}
       <View style={styles.micArea}>
-        <VoiceButton
-          state={micState}
-          onPress={handleMicPress}
-          disabled={false}
-        />
+        <VoiceButton state={micState} onPress={handleMicPress} disabled={false} />
         <Text style={styles.micLabel}>{micLabel}</Text>
         {micState === MIC_STATES.SPEAKING && (
           <TouchableOpacity
@@ -662,12 +666,12 @@ export default function PatientHomeScreen() {
             }}
             activeOpacity={0.8}
           >
-            <Text style={styles.stopButtonText}>⏹ Stop Speaking</Text>
+            <Text style={styles.stopButtonText}>Stop Speaking</Text>
           </TouchableOpacity>
         )}
       </View>
 
-      {/* SOS button */}
+      {/* ── SOS button ── */}
       <View style={styles.sosContainer}>
         <SOSButton onPress={handleSOSPress} />
       </View>
@@ -723,23 +727,24 @@ export default function PatientHomeScreen() {
               {'\n\n'}Stay calm — you are safe.
             </Text>
 
-            {/* Favorite song player */}
+            {/* Favorite song — hidden iframe plays audio only, no visible player */}
             {patientContext?.favoriteSong && Platform.OS === 'web' && (
-              <View style={styles.songPlayer}>
-                <Text style={styles.songLabel}>🎵 Playing your favorite song...</Text>
-                <Text style={styles.songName}>{patientContext.favoriteSong}</Text>
-                {songVideoId ? (
+              <>
+                <View style={styles.songPlayer}>
+                  <Ionicons name="musical-notes" size={20} color={colors.secondary} />
+                  <Text style={styles.songLabel}>
+                    {songVideoId ? `Playing: ${patientContext.favoriteSong}` : 'Finding your favorite song...'}
+                  </Text>
+                </View>
+                {songVideoId && (
                   // eslint-disable-next-line react-native/no-inline-styles
                   <iframe
-                    src={`https://www.youtube.com/embed/${songVideoId}?autoplay=1&controls=1`}
-                    style={{ width: '100%', height: 120, border: 'none', borderRadius: 12, marginTop: 8 }}
+                    src={`https://www.youtube.com/embed/${songVideoId}?autoplay=1&controls=0`}
+                    style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
                     allow="autoplay; encrypted-media"
-                    allowFullScreen
                   />
-                ) : (
-                  <Text style={styles.songSearching}>Searching...</Text>
                 )}
-              </View>
+              </>
             )}
 
             <TouchableOpacity
@@ -786,176 +791,161 @@ export default function PatientHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
+  container: { flex: 1, backgroundColor: colors.background },
+
+  // Top bar
+  topBar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 18,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 5,
+  exitBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    marginBottom: 8,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    borderRadius: 20,
-  },
-  backButtonText: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '600',
-  },
-  greeting: {
-    fontSize: 30,
-    fontWeight: '700',
-    color: colors.white,
-    textAlign: 'center',
-    letterSpacing: 0.3,
-  },
-  dateText: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: 4,
-    letterSpacing: 0.2,
-  },
-  timeText: {
-    fontSize: 48,
-    fontWeight: '200',
-    color: colors.white,
-    marginTop: 2,
-    letterSpacing: 2,
-  },
-  careAlert: {
-    backgroundColor: '#FFF3CD',
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 10,
-    padding: 14,
-  },
-  careAlertText: {
-    fontSize: 18,
-    color: '#92400E',
-    lineHeight: 26,
-  },
-  careAlertDismiss: {
-    fontSize: 13,
-    color: '#B45309',
-    marginTop: 6,
-    fontStyle: 'italic',
-  },
-  messagesContainer: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  messagesContent: {
-    paddingVertical: 16,
-    flexGrow: 1,
-    justifyContent: 'flex-end',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyStateText: {
-    fontSize: 22,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 34,
-    marginBottom: 20,
-  },
-  contextCard: {
     backgroundColor: colors.surface,
     borderRadius: 20,
-    padding: 18,
-    width: '100%',
-    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  exitText: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+  topClock: { fontSize: 34, fontWeight: '200', color: colors.text, letterSpacing: 1 },
+
+  // Avatar section
+  avatarSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    gap: 16,
+  },
+  avatarBubble: {
+    borderRadius: 48,
+    padding: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.borderLight,
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  contextCardHeader: {
-    flexDirection: 'row',
+  avatarBubbleMini: {
+    borderRadius: 32,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  contextCardTitle: {
+  avatarMeta: { flex: 1 },
+  greetingName: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: 0.2,
+  },
+  stateText: {
+    fontSize: 15,
+    color: colors.primary,
+    fontWeight: '500',
+    marginTop: 3,
+  },
+  dateSmall: {
     fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+
+  // Care alert
+  careAlert: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFF8E7',
+    borderLeftWidth: 4,
+    borderLeftColor: colors.amber,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 20,
+    padding: 14,
+  },
+  careAlertText: { fontSize: 16, color: '#92400E', lineHeight: 24, flex: 1 },
+  careAlertDismiss: { fontSize: 12, color: '#B45309', marginTop: 4, fontStyle: 'italic' },
+
+  // Messages
+  messagesContainer: { flex: 1, paddingHorizontal: 12 },
+  messagesContent: { paddingVertical: 16, flexGrow: 1, justifyContent: 'flex-end' },
+
+  // Info cards (horizontal scroll, empty state)
+  infoScroll: { height: 230 },
+  infoScrollContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 12,
+    alignItems: 'stretch',
+  },
+  infoCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 28,
+    padding: 18,
+    width: 200,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  infoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  infoCardTitle: {
+    fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.7,
   },
-  contextCardItem: {
-    fontSize: 17,
-    color: colors.text,
-    lineHeight: 28,
-  },
-  contextCardBody: {
-    fontSize: 16,
-    color: colors.textMuted,
-    lineHeight: 26,
-  },
+  infoCardItem: { fontSize: 15, color: colors.text, lineHeight: 24, fontWeight: '500' },
+  infoCardMore: { fontSize: 12, color: colors.textLight, fontStyle: 'italic', marginTop: 2 },
+  infoCardBody: { fontSize: 14, color: colors.textMuted, lineHeight: 22 },
+
+  // Waveform
   waveformContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 48,
+    height: 44,
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 4,
   },
-  waveBar: {
-    width: 5,
-    height: 36,
-    borderRadius: 3,
-    backgroundColor: '#E8621A',
-  },
-  micArea: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  micLabel: {
-    marginTop: 16,
-    fontSize: 18,
-    color: colors.textMuted,
-    fontWeight: '500',
-    letterSpacing: 0.3,
-  },
+  waveBar: { width: 5, height: 32, borderRadius: 3, backgroundColor: colors.primary },
+
+  // Mic area
+  micArea: { alignItems: 'center', paddingVertical: 14 },
+  micLabel: { marginTop: 12, fontSize: 17, color: colors.textMuted, fontWeight: '500' },
   stopButton: {
-    marginTop: 14,
+    marginTop: 12,
     backgroundColor: colors.secondary,
-    paddingVertical: 13,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    paddingVertical: 11,
+    paddingHorizontal: 28,
+    borderRadius: 28,
   },
-  stopButtonText: {
-    color: colors.white,
-    fontSize: 17,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  sosContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    paddingTop: 8,
-  },
+  stopButtonText: { color: colors.white, fontSize: 16, fontWeight: '700' },
+
+  // SOS
+  sosContainer: { paddingHorizontal: 20, paddingBottom: 20, paddingTop: 4 },
   // Modals
   modalOverlay: {
     flex: 1,
@@ -1046,29 +1036,30 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   songPlayer: {
-    width: '100%',
-    backgroundColor: colors.primaryLight,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.secondaryLight,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    width: '100%',
   },
   songLabel: {
     fontSize: 14,
-    color: colors.primary,
+    color: colors.secondary,
     fontWeight: '600',
+    flex: 1,
   },
-  songName: {
-    fontSize: 16,
-    color: colors.text,
-    fontWeight: '700',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  songSearching: {
-    fontSize: 14,
-    color: colors.textMuted,
-    fontStyle: 'italic',
+  // alias used in mic permission modal
+  modalConfirmButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 32,
+    width: '100%',
+    alignItems: 'center',
     marginTop: 8,
   },
 });

@@ -18,29 +18,51 @@ import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
 import { getContext, updateContext } from '../../services/api';
 
-function SectionHeader({ title, icon }) {
+// Section label above each card group
+function SectionLabel({ title, icon }) {
   return (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionIconBadge}>
-        <Ionicons name={icon} size={16} color={colors.primary} />
-      </View>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <View style={styles.sectionLabel}>
+      <Ionicons name={icon} size={12} color={colors.textMuted} />
+      <Text style={styles.sectionLabelText}>{title.toUpperCase()}</Text>
     </View>
   );
 }
 
-function ListItem({ value, onRemove, index }) {
+// White rounded card wrapper — auto-inserts hairline dividers between children
+function FormCard({ children }) {
+  const arr = React.Children.toArray(children).filter(Boolean);
   return (
-    <View style={styles.listItem}>
-      <Text style={styles.listItemText} numberOfLines={2}>
-        {value}
-      </Text>
+    <View style={styles.formCard}>
+      {arr.map((child, i) => (
+        <View key={i}>
+          {i > 0 && <View style={styles.cardDivider} />}
+          {child}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// Single input row inside a card (label above, input below)
+function CardField({ label, children }) {
+  return (
+    <View style={styles.cardField}>
+      {!!label && <Text style={styles.cardFieldLabel}>{label}</Text>}
+      {children}
+    </View>
+  );
+}
+
+function ListItemRow({ value, onRemove, index }) {
+  return (
+    <View style={styles.listItemRow}>
+      <Text style={styles.listItemText} numberOfLines={2}>{value}</Text>
       <TouchableOpacity
-        style={styles.removeButton}
+        style={styles.removeBtn}
         onPress={() => onRemove(index)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.removeButtonText}>✕</Text>
+        <Ionicons name="close" size={14} color={colors.danger} />
       </TouchableOpacity>
     </View>
   );
@@ -48,14 +70,9 @@ function ListItem({ value, onRemove, index }) {
 
 function AddItemRow({ placeholder, onAdd }) {
   const [value, setValue] = useState('');
-
   const handleAdd = () => {
-    if (value.trim()) {
-      onAdd(value.trim());
-      setValue('');
-    }
+    if (value.trim()) { onAdd(value.trim()); setValue(''); }
   };
-
   return (
     <View style={styles.addRow}>
       <TextInput
@@ -63,16 +80,16 @@ function AddItemRow({ placeholder, onAdd }) {
         value={value}
         onChangeText={setValue}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.textLight}
         onSubmitEditing={handleAdd}
         returnKeyType="done"
       />
       <TouchableOpacity
-        style={[styles.addButton, !value.trim() && styles.addButtonDisabled]}
         onPress={handleAdd}
         disabled={!value.trim()}
+        style={[styles.addBtn, !value.trim() && styles.addBtnDisabled]}
       >
-        <Text style={styles.addButtonText}>Add</Text>
+        <Text style={[styles.addBtnText, !value.trim() && styles.addBtnTextDisabled]}>Add</Text>
       </TouchableOpacity>
     </View>
   );
@@ -80,64 +97,58 @@ function AddItemRow({ placeholder, onAdd }) {
 
 function FamilyMemberRow({ member, onRemove, index }) {
   return (
-    <View style={styles.listItem}>
-      <View style={styles.familyMemberContent}>
-        <Text style={styles.familyName}>{member.name}</Text>
-        <Text style={styles.familyRelation}>{member.relation}</Text>
+    <View style={styles.listItemRow}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.listItemText}>{member.name}</Text>
+        <Text style={styles.listItemSub}>{member.relation}</Text>
       </View>
       <TouchableOpacity
-        style={styles.removeButton}
+        style={styles.removeBtn}
         onPress={() => onRemove(index)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.removeButtonText}>✕</Text>
+        <Ionicons name="close" size={14} color={colors.danger} />
       </TouchableOpacity>
     </View>
   );
 }
 
-function AddFamilyMemberRow({ onAdd }) {
+function AddFamilyRow({ onAdd }) {
   const [name, setName] = useState('');
   const [relation, setRelation] = useState('');
-
   const handleAdd = () => {
     if (name.trim() && relation.trim()) {
       onAdd({ name: name.trim(), relation: relation.trim() });
-      setName('');
-      setRelation('');
+      setName(''); setRelation('');
     }
   };
-
   return (
     <View style={styles.addFamilyRow}>
       <View style={styles.addFamilyInputs}>
         <TextInput
-          style={[styles.addInput, styles.addFamilyNameInput]}
+          style={[styles.addInput, { flex: 2 }]}
           value={name}
           onChangeText={setName}
           placeholder="Name"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textLight}
           returnKeyType="next"
         />
         <TextInput
-          style={[styles.addInput, styles.addFamilyRelationInput]}
+          style={[styles.addInput, { flex: 1 }]}
           value={relation}
           onChangeText={setRelation}
           placeholder="Relation"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.textLight}
           returnKeyType="done"
           onSubmitEditing={handleAdd}
         />
       </View>
       <TouchableOpacity
-        style={[
-          styles.addButton,
-          (!name.trim() || !relation.trim()) && styles.addButtonDisabled,
-        ]}
         onPress={handleAdd}
         disabled={!name.trim() || !relation.trim()}
+        style={[styles.addBtn, (!name.trim() || !relation.trim()) && styles.addBtnDisabled]}
       >
-        <Text style={styles.addButtonText}>Add</Text>
+        <Text style={[styles.addBtnText, (!name.trim() || !relation.trim()) && styles.addBtnTextDisabled]}>Add</Text>
       </TouchableOpacity>
     </View>
   );
@@ -165,9 +176,7 @@ export default function ContextScreen() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const originalContextRef = useRef(null);
 
-  useEffect(() => {
-    loadContext();
-  }, [patientId]);
+  useEffect(() => { loadContext(); }, [patientId]);
 
   const loadContext = async () => {
     try {
@@ -193,7 +202,7 @@ export default function ContextScreen() {
       originalContextRef.current = JSON.stringify(normalized);
       setIsDirty(false);
     } catch (err) {
-      setError('Could not load patient context. Check your connection.');
+      setError('Could not load patient profile. Check your connection.');
       console.error('ContextScreen load error:', err);
     } finally {
       setLoading(false);
@@ -209,29 +218,8 @@ export default function ContextScreen() {
     setSaveSuccess(false);
   };
 
-  const handleAddMedication = (med) => {
-    const updated = [...context.medications, med];
-    updateField('medications', updated);
-  };
-
-  const handleRemoveMedication = (index) => {
-    const updated = context.medications.filter((_, i) => i !== index);
-    updateField('medications', updated);
-  };
-
-  const handleAddFamilyMember = (member) => {
-    const updated = [...context.familyMembers, member];
-    updateField('familyMembers', updated);
-  };
-
-  const handleRemoveFamilyMember = (index) => {
-    const updated = context.familyMembers.filter((_, i) => i !== index);
-    updateField('familyMembers', updated);
-  };
-
   const handleSave = async () => {
     if (!isDirty) return;
-
     try {
       setSaving(true);
       setError(null);
@@ -268,23 +256,22 @@ export default function ContextScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
-        {/* Dirty indicator banner */}
         {isDirty && (
           <View style={styles.dirtyBanner}>
+            <Ionicons name="ellipse" size={8} color="#B45309" />
             <Text style={styles.dirtyBannerText}>Unsaved changes</Text>
           </View>
         )}
-
         {saveSuccess && (
           <View style={styles.successBanner}>
-            <Text style={styles.successBannerText}>✓ Saved successfully</Text>
+            <Ionicons name="checkmark-circle" size={14} color="#166534" />
+            <Text style={styles.successBannerText}>Saved successfully</Text>
           </View>
         )}
-
         {error && (
           <View style={styles.errorBanner}>
             <Text style={styles.errorBannerText}>{error}</Text>
@@ -297,172 +284,204 @@ export default function ContextScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Basic Info */}
-          <SectionHeader title="Basic Information" icon="person-outline" />
+          {/* ── Basic Information ── */}
+          <SectionLabel title="Basic Information" icon="person-outline" />
+          <FormCard>
+            <CardField label="Full Name">
+              <TextInput
+                style={styles.cardInput}
+                value={context.name}
+                onChangeText={(v) => updateField('name', v)}
+                placeholder="Patient's full name"
+                placeholderTextColor={colors.textLight}
+                returnKeyType="next"
+              />
+            </CardField>
+            <CardField label="Age">
+              <TextInput
+                style={styles.cardInput}
+                value={context.age}
+                onChangeText={(v) => updateField('age', v)}
+                placeholder="e.g. 78"
+                placeholderTextColor={colors.textLight}
+                keyboardType="numeric"
+                returnKeyType="next"
+              />
+            </CardField>
+          </FormCard>
 
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            value={context.name}
-            onChangeText={(v) => updateField('name', v)}
-            placeholder="Patient's full name"
-            placeholderTextColor={colors.textMuted}
-            returnKeyType="next"
-          />
+          {/* ── Daily Routine ── */}
+          <SectionLabel title="Daily Routine" icon="time-outline" />
+          <FormCard>
+            <CardField>
+              <TextInput
+                style={[styles.cardInput, styles.cardTextArea]}
+                value={context.dailyRoutine}
+                onChangeText={(v) => updateField('dailyRoutine', v)}
+                placeholder="Describe the patient's typical daily routine..."
+                placeholderTextColor={colors.textLight}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+              />
+            </CardField>
+          </FormCard>
 
-          <Text style={styles.label}>Age</Text>
-          <TextInput
-            style={styles.input}
-            value={context.age}
-            onChangeText={(v) => updateField('age', v)}
-            placeholder="e.g. 78"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numeric"
-            returnKeyType="next"
-          />
-
-          {/* Daily Routine */}
-          <SectionHeader title="Daily Routine" icon="time-outline" />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={context.dailyRoutine}
-            onChangeText={(v) => updateField('dailyRoutine', v)}
-            placeholder="Describe the patient's typical daily routine..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-          />
-
-          {/* Medications */}
-          <SectionHeader title="Medications" icon="medical-outline" />
-          {context.medications.length > 0 ? (
-            context.medications.map((med, index) => (
-              <ListItem
+          {/* ── Medications ── */}
+          <SectionLabel title="Medications" icon="medical-outline" />
+          <FormCard>
+            {context.medications.length === 0 && (
+              <View style={styles.emptyCardRow}>
+                <Text style={styles.emptyCardText}>No medications added</Text>
+              </View>
+            )}
+            {context.medications.map((med, index) => (
+              <ListItemRow
                 key={index}
                 value={med}
                 index={index}
-                onRemove={handleRemoveMedication}
+                onRemove={(i) => updateField('medications', context.medications.filter((_, k) => k !== i))}
               />
-            ))
-          ) : (
-            <Text style={styles.emptyListText}>No medications added</Text>
-          )}
-          <AddItemRow
-            placeholder="Add a medication (e.g. Aricept 10mg daily)"
-            onAdd={handleAddMedication}
-          />
+            ))}
+            <CardField>
+              <AddItemRow
+                placeholder="Add medication (e.g. Aricept 10mg daily)"
+                onAdd={(v) => updateField('medications', [...context.medications, v])}
+              />
+            </CardField>
+          </FormCard>
 
-          {/* Family Members */}
-          <SectionHeader title="Family Members" icon="people-outline" />
-          {context.familyMembers.length > 0 ? (
-            context.familyMembers.map((member, index) => (
+          {/* ── Family Members ── */}
+          <SectionLabel title="Family Members" icon="people-outline" />
+          <FormCard>
+            {context.familyMembers.length === 0 && (
+              <View style={styles.emptyCardRow}>
+                <Text style={styles.emptyCardText}>No family members added</Text>
+              </View>
+            )}
+            {context.familyMembers.map((member, index) => (
               <FamilyMemberRow
                 key={index}
                 member={member}
                 index={index}
-                onRemove={handleRemoveFamilyMember}
+                onRemove={(i) => updateField('familyMembers', context.familyMembers.filter((_, k) => k !== i))}
               />
-            ))
-          ) : (
-            <Text style={styles.emptyListText}>No family members added</Text>
-          )}
-          <AddFamilyMemberRow onAdd={handleAddFamilyMember} />
+            ))}
+            <CardField>
+              <AddFamilyRow
+                onAdd={(v) => updateField('familyMembers', [...context.familyMembers, v])}
+              />
+            </CardField>
+          </FormCard>
 
-          {/* Baseline Rules */}
-          <SectionHeader title="Baseline Rules" icon="shield-checkmark-outline" />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={context.baselineRules}
-            onChangeText={(v) => updateField('baselineRules', v)}
-            placeholder="Rules for the AI assistant (e.g. always remind them to drink water, never mention certain topics)..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-          />
+          {/* ── Baseline Rules ── */}
+          <SectionLabel title="Baseline Rules" icon="shield-checkmark-outline" />
+          <FormCard>
+            <CardField>
+              <TextInput
+                style={[styles.cardInput, styles.cardTextArea]}
+                value={context.baselineRules}
+                onChangeText={(v) => updateField('baselineRules', v)}
+                placeholder="Rules for the AI assistant (e.g. always remind to drink water)..."
+                placeholderTextColor={colors.textLight}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+              />
+            </CardField>
+          </FormCard>
 
-          {/* Speaking Language */}
-          <SectionHeader title="Speaking Language" icon="globe-outline" />
-          <View style={styles.languagePicker}>
+          {/* ── Language ── */}
+          <SectionLabel title="Speaking Language" icon="globe-outline" />
+          <FormCard>
             <TouchableOpacity
-              style={[styles.langBtn, context.language === 'he' && styles.langBtnActive]}
+              style={styles.langRow}
               onPress={() => updateField('language', 'he')}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.langBtnText, context.language === 'he' && styles.langBtnTextActive]}>
-                עברית — Hebrew
-              </Text>
+              <Text style={styles.langRowText}>עברית — Hebrew</Text>
+              {context.language === 'he' && (
+                <Ionicons name="checkmark" size={18} color={colors.primary} />
+              )}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.langBtn, context.language === 'en' && styles.langBtnActive]}
+              style={styles.langRow}
               onPress={() => updateField('language', 'en')}
-              activeOpacity={0.8}
+              activeOpacity={0.7}
             >
-              <Text style={[styles.langBtnText, context.language === 'en' && styles.langBtnTextActive]}>
-                English
-              </Text>
+              <Text style={styles.langRowText}>English</Text>
+              {context.language === 'en' && (
+                <Ionicons name="checkmark" size={18} color={colors.primary} />
+              )}
             </TouchableOpacity>
-          </View>
-          <Text style={styles.langHint}>
+          </FormCard>
+          <Text style={styles.hint}>
             The AI assistant will speak and respond in this language.
           </Text>
 
-          {/* Favorite Song */}
-          <SectionHeader title="Favorite Song" icon="musical-notes-outline" />
-          <TextInput
-            style={styles.input}
-            value={context.favoriteSong}
-            onChangeText={(v) => updateField('favoriteSong', v)}
-            placeholder="e.g. Yesterday by The Beatles"
-            placeholderTextColor={colors.textMuted}
-            returnKeyType="next"
-          />
-          <Text style={styles.songHint}>
-            Played automatically when the patient triggers an SOS alert to keep them calm while waiting for help.
+          {/* ── Favorite Song ── */}
+          <SectionLabel title="Favorite Song" icon="musical-notes-outline" />
+          <FormCard>
+            <CardField label="Song name">
+              <TextInput
+                style={styles.cardInput}
+                value={context.favoriteSong}
+                onChangeText={(v) => updateField('favoriteSong', v)}
+                placeholder="e.g. Yesterday by The Beatles"
+                placeholderTextColor={colors.textLight}
+                returnKeyType="next"
+              />
+            </CardField>
+          </FormCard>
+          <Text style={styles.hint}>
+            Played automatically when the patient triggers an SOS alert.
           </Text>
 
-          {/* Notes */}
-          <SectionHeader title="Additional Notes" icon="document-text-outline" />
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={context.notes}
-            onChangeText={(v) => updateField('notes', v)}
-            placeholder="Any additional notes for the AI assistant..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
+          {/* ── Additional Notes ── */}
+          <SectionLabel title="Additional Notes" icon="document-text-outline" />
+          <FormCard>
+            <CardField>
+              <TextInput
+                style={[styles.cardInput, styles.cardTextArea]}
+                value={context.notes}
+                onChangeText={(v) => updateField('notes', v)}
+                placeholder="Any additional notes for the AI assistant..."
+                placeholderTextColor={colors.textLight}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </CardField>
+          </FormCard>
 
-          {/* Save Button */}
+          {/* ── Save Button ── */}
           <TouchableOpacity
             onPress={handleSave}
             disabled={!isDirty || saving}
             activeOpacity={0.85}
-            style={[styles.saveButtonWrapper, (!isDirty || saving) && styles.saveButtonDisabledWrapper]}
+            style={[styles.saveWrapper, (!isDirty || saving) && styles.saveWrapperDisabled]}
           >
             {isDirty && !saving ? (
               <LinearGradient
                 colors={colors.gradientPrimary}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.saveButton}
+                style={styles.saveBtn}
               >
-                <Text style={styles.saveButtonText}>Save Changes</Text>
+                <Ionicons name="checkmark-circle" size={20} color={colors.white} />
+                <Text style={styles.saveBtnText}>Save Changes</Text>
               </LinearGradient>
             ) : (
-              <View style={[styles.saveButton, !isDirty ? styles.saveButtonSaved : styles.saveButtonSaving]}>
-                {saving ? (
-                  <ActivityIndicator color={colors.white} size="small" />
-                ) : (
-                  <Text style={[styles.saveButtonText, styles.saveButtonTextSaved]}>✓ All Changes Saved</Text>
-                )}
+              <View style={[styles.saveBtn, styles.saveBtnInactive]}>
+                {saving
+                  ? <ActivityIndicator color={colors.primary} size="small" />
+                  : <Text style={styles.saveBtnTextInactive}>All Changes Saved</Text>
+                }
               </View>
             )}
           </TouchableOpacity>
 
-          <View style={styles.bottomSpacer} />
+          <View style={{ height: 48 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -470,297 +489,230 @@ export default function ContextScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  keyboardAvoid: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 17,
-    color: colors.textMuted,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  loadingText: { marginTop: 12, fontSize: 17, color: colors.textMuted },
+
+  // Status banners
   dirtyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderBottomWidth: 1,
     borderBottomColor: '#FDE68A',
   },
-  dirtyBannerText: {
-    fontSize: 14,
-    color: '#92400E',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
+  dirtyBannerText: { fontSize: 13, color: '#92400E', fontWeight: '600' },
   successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: '#DCFCE7',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderBottomWidth: 1,
     borderBottomColor: '#BBF7D0',
   },
-  successBannerText: {
-    fontSize: 14,
-    color: '#166534',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
+  successBannerText: { fontSize: 13, color: '#166534', fontWeight: '600' },
   errorBanner: {
     backgroundColor: colors.dangerLight,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderBottomWidth: 1,
     borderBottomColor: '#FECACA',
   },
-  errorBannerText: {
-    fontSize: 14,
-    color: '#991B1B',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 16,
-    gap: 8,
-  },
-  sectionHeader: {
+  errorBannerText: { fontSize: 13, color: '#991B1B', fontWeight: '500' },
+
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16, paddingTop: 12 },
+
+  // Section labels
+  sectionLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 20,
-    marginBottom: 10,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    gap: 6,
+    marginTop: 24,
+    marginBottom: 8,
+    marginLeft: 4,
   },
-  sectionIconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: 17,
+  sectionLabelText: {
+    fontSize: 11,
     fontWeight: '700',
-    color: colors.text,
-    letterSpacing: 0.2,
+    color: colors.textMuted,
+    letterSpacing: 0.9,
   },
-  label: {
-    fontSize: 15,
+
+  // Form card
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginLeft: 16,
+  },
+  cardField: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  cardFieldLabel: {
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textMuted,
-    marginBottom: 6,
-    marginTop: 4,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 17,
-    color: colors.text,
     marginBottom: 4,
+    letterSpacing: 0.3,
   },
-  textArea: {
-    minHeight: 110,
-    paddingTop: 12,
+  cardInput: {
+    fontSize: 16,
+    color: colors.text,
+    padding: 0,
+    backgroundColor: 'transparent',
   },
-  emptyListText: {
-    fontSize: 15,
-    color: colors.textMuted,
+  cardTextArea: {
+    minHeight: 100,
+    paddingTop: 2,
+    lineHeight: 24,
+  },
+
+  // Empty state inside card
+  emptyCardRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  emptyCardText: {
+    fontSize: 14,
+    color: colors.textLight,
     fontStyle: 'italic',
-    marginBottom: 8,
-    paddingLeft: 4,
   },
-  listItem: {
+
+  // List item inside card
+  listItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 8,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 3,
-    elevation: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    gap: 10,
   },
   listItemText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.text,
     lineHeight: 22,
+    fontWeight: '500',
   },
-  removeButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  listItemSub: {
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  removeBtn: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: colors.dangerLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeButtonText: {
-    fontSize: 13,
-    color: colors.danger,
-    fontWeight: '700',
-  },
+
+  // Add item row (inside card)
   addRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  addInput: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: colors.text,
-  },
-  addButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingHorizontal: 18,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addButtonDisabled: {
-    backgroundColor: colors.border,
-  },
-  addButtonText: {
-    fontSize: 15,
-    color: colors.white,
-    fontWeight: '700',
+    gap: 8,
   },
   addFamilyRow: {
     gap: 8,
-    marginBottom: 8,
   },
   addFamilyInputs: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 8,
   },
-  addFamilyNameInput: {
-    flex: 2,
-  },
-  addFamilyRelationInput: {
+  addInput: {
     flex: 1,
-  },
-  familyMemberContent: {
-    flex: 1,
-  },
-  familyName: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
     color: colors.text,
+    padding: 0,
+    backgroundColor: 'transparent',
   },
-  familyRelation: {
+  addBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: colors.primaryLight,
+  },
+  addBtnDisabled: { backgroundColor: 'transparent' },
+  addBtnText: {
     fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 2,
+    fontWeight: '700',
+    color: colors.primary,
   },
-  saveButtonWrapper: {
-    marginTop: 28,
+  addBtnTextDisabled: { color: colors.textLight },
+
+  // Language selector rows (iOS-style list)
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  langRowText: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
+  },
+
+  hint: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 6,
+    marginLeft: 4,
+    lineHeight: 18,
+  },
+
+  // Save button
+  saveWrapper: {
+    marginTop: 32,
     borderRadius: 16,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
-  saveButtonDisabledWrapper: {
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  saveButton: {
+  saveWrapperDisabled: { shadowOpacity: 0, elevation: 0 },
+  saveBtn: {
     borderRadius: 16,
-    paddingVertical: 18,
+    paddingVertical: 17,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  saveButtonSaved: {
-    backgroundColor: colors.border,
+  saveBtnInactive: {
+    backgroundColor: colors.borderLight,
   },
-  saveButtonSaving: {
-    backgroundColor: colors.primary,
-    opacity: 0.8,
-  },
-  saveButtonText: {
-    fontSize: 20,
+  saveBtnText: {
+    fontSize: 18,
     fontWeight: '700',
     color: colors.white,
     letterSpacing: 0.3,
   },
-  saveButtonTextSaved: {
-    color: colors.textMuted,
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  languagePicker: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 6,
-  },
-  langBtn: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-  },
-  langBtnActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  langBtnText: {
-    fontSize: 15,
+  saveBtnTextInactive: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.textMuted,
-  },
-  langBtnTextActive: {
-    color: colors.primary,
-  },
-  langHint: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginBottom: 4,
-    paddingHorizontal: 4,
-  },
-  songHint: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginBottom: 4,
-    marginTop: 2,
-    paddingHorizontal: 4,
-    lineHeight: 18,
-  },
-  bottomSpacer: {
-    height: 40,
   },
 });
