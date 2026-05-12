@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   // Form card
   formCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: colors.borderLight,
     overflow: 'hidden',
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
   addBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 14,
     backgroundColor: colors.primaryLight,
   },
   addBtnDisabled: { backgroundColor: 'transparent' },
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   // Save button
   saveWrapper: {
     marginTop: 32,
-    borderRadius: 16,
+    borderRadius: 28,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
@@ -694,7 +694,7 @@ const styles = StyleSheet.create({
   },
   saveWrapperDisabled: { shadowOpacity: 0, elevation: 0 },
   saveBtn: {
-    borderRadius: 16,
+    borderRadius: 28,
     paddingVertical: 17,
     alignItems: 'center',
     justifyContent: 'center',

@@ -526,7 +526,7 @@ export default function PatientHomeScreen() {
       </View>
 
       {/* ── AI Avatar card ── */}
-      <View style={[styles.avatarSection, Platform.OS === 'web' && styles.avatarSectionWeb]}>
+      <View style={styles.avatarSection}>
         <LinearGradient
           colors={['#E8F2FF', '#F4F7FC']}
           start={{ x: 0.5, y: 0 }}
@@ -535,12 +535,12 @@ export default function PatientHomeScreen() {
         >
           <AIFace micState={micState} mini={messages.length > 0} />
         </LinearGradient>
-        <View style={[styles.avatarMeta, Platform.OS === 'web' && styles.avatarMetaWeb]}>
-          <Text style={[styles.greetingName, Platform.OS === 'web' && { textAlign: 'center' }]}>
+        <View style={styles.avatarMeta}>
+          <Text style={styles.greetingName}>
             Hi, {patientContext?.name || patientName || 'Friend'}!
           </Text>
-          <Text style={[styles.stateText, Platform.OS === 'web' && { textAlign: 'center' }]}>{stateLabel}</Text>
-          <Text style={[styles.dateSmall, Platform.OS === 'web' && { textAlign: 'center' }]}>{getCurrentDate()}</Text>
+          <Text style={styles.stateText}>{stateLabel}</Text>
+          <Text style={styles.dateSmall}>{getCurrentDate()}</Text>
         </View>
       </View>
 
@@ -823,13 +823,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     gap: 16,
   },
-  avatarSectionWeb: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 14,
-    gap: 12,
-  },
   avatarBubble: {
     borderRadius: 48,
     padding: 22,
@@ -858,7 +851,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   avatarMeta: { flex: 1 },
-  avatarMetaWeb: { flex: 0, alignItems: 'center', width: '100%' },
   greetingName: {
     fontSize: 26,
     fontWeight: '700',
@@ -953,7 +945,7 @@ const styles = StyleSheet.create({
   stopButtonText: { color: colors.white, fontSize: 16, fontWeight: '700' },
 
   // SOS
-  sosContainer: { paddingHorizontal: 20, paddingBottom: 20, paddingTop: 4 },
+  sosContainer: { paddingHorizontal: 28, paddingBottom: 24, paddingTop: 4 },
   // Modals
   modalOverlay: {
     flex: 1,
