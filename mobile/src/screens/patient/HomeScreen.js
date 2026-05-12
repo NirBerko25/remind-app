@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { Platform } from 'react-native';
 import { colors } from '../../constants/colors';
@@ -557,9 +558,12 @@ export default function PatientHomeScreen() {
             {/* Medications reminder */}
             {patientContext?.medications?.length > 0 && (
               <View style={styles.contextCard}>
-                <Text style={styles.contextCardTitle}>💊 Your Medications</Text>
+                <View style={styles.contextCardHeader}>
+                  <Ionicons name="medical-outline" size={15} color={colors.primary} />
+                  <Text style={styles.contextCardTitle}>Your Medications</Text>
+                </View>
                 {patientContext.medications.map((med, i) => (
-                  <Text key={i} style={styles.contextCardItem}>• {med}</Text>
+                  <Text key={i} style={styles.contextCardItem}>· {med}</Text>
                 ))}
               </View>
             )}
@@ -567,10 +571,13 @@ export default function PatientHomeScreen() {
             {/* Family members */}
             {patientContext?.familyMembers?.length > 0 && (
               <View style={styles.contextCard}>
-                <Text style={styles.contextCardTitle}>👨‍👩‍👧 Your Family</Text>
+                <View style={styles.contextCardHeader}>
+                  <Ionicons name="people-outline" size={15} color={colors.primary} />
+                  <Text style={styles.contextCardTitle}>Your Family</Text>
+                </View>
                 {patientContext.familyMembers.map((m, i) => (
                   <Text key={i} style={styles.contextCardItem}>
-                    • {m.name}{m.relation ? ` — ${m.relation}` : ''}
+                    · {m.name}{m.relation ? ` — ${m.relation}` : ''}
                   </Text>
                 ))}
               </View>
@@ -579,7 +586,10 @@ export default function PatientHomeScreen() {
             {/* Daily routine */}
             {!!patientContext?.dailyRoutine && (
               <View style={styles.contextCard}>
-                <Text style={styles.contextCardTitle}>🕐 Your Daily Routine</Text>
+                <View style={styles.contextCardHeader}>
+                  <Ionicons name="time-outline" size={15} color={colors.primary} />
+                  <Text style={styles.contextCardTitle}>Your Daily Routine</Text>
+                </View>
                 <Text style={styles.contextCardBody}>{patientContext.dailyRoutine}</Text>
               </View>
             )}
@@ -587,7 +597,10 @@ export default function PatientHomeScreen() {
             {/* Notes */}
             {!!patientContext?.notes && (
               <View style={styles.contextCard}>
-                <Text style={styles.contextCardTitle}>📝 Notes</Text>
+                <View style={styles.contextCardHeader}>
+                  <Ionicons name="document-text-outline" size={15} color={colors.primary} />
+                  <Text style={styles.contextCardTitle}>Notes</Text>
+                </View>
                 <Text style={styles.contextCardBody}>{patientContext.notes}</Text>
               </View>
             )}
@@ -872,11 +885,16 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
+  contextCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
   contextCardTitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.primary,
-    marginBottom: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },

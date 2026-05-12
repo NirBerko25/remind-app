@@ -13,6 +13,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
 import { getContext, updateContext } from '../../services/api';
@@ -21,7 +22,7 @@ function SectionHeader({ title, icon }) {
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionIconBadge}>
-        <Text style={styles.sectionIcon}>{icon}</Text>
+        <Ionicons name={icon} size={16} color={colors.primary} />
       </View>
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
@@ -297,7 +298,7 @@ export default function ContextScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Basic Info */}
-          <SectionHeader title="Basic Information" icon="👤" />
+          <SectionHeader title="Basic Information" icon="person-outline" />
 
           <Text style={styles.label}>Full Name</Text>
           <TextInput
@@ -321,7 +322,7 @@ export default function ContextScreen() {
           />
 
           {/* Daily Routine */}
-          <SectionHeader title="Daily Routine" icon="🕐" />
+          <SectionHeader title="Daily Routine" icon="time-outline" />
           <TextInput
             style={[styles.input, styles.textArea]}
             value={context.dailyRoutine}
@@ -334,7 +335,7 @@ export default function ContextScreen() {
           />
 
           {/* Medications */}
-          <SectionHeader title="Medications" icon="💊" />
+          <SectionHeader title="Medications" icon="medical-outline" />
           {context.medications.length > 0 ? (
             context.medications.map((med, index) => (
               <ListItem
@@ -353,7 +354,7 @@ export default function ContextScreen() {
           />
 
           {/* Family Members */}
-          <SectionHeader title="Family Members" icon="👨‍👩‍👧" />
+          <SectionHeader title="Family Members" icon="people-outline" />
           {context.familyMembers.length > 0 ? (
             context.familyMembers.map((member, index) => (
               <FamilyMemberRow
@@ -369,7 +370,7 @@ export default function ContextScreen() {
           <AddFamilyMemberRow onAdd={handleAddFamilyMember} />
 
           {/* Baseline Rules */}
-          <SectionHeader title="Baseline Rules" icon="📋" />
+          <SectionHeader title="Baseline Rules" icon="shield-checkmark-outline" />
           <TextInput
             style={[styles.input, styles.textArea]}
             value={context.baselineRules}
@@ -382,7 +383,7 @@ export default function ContextScreen() {
           />
 
           {/* Speaking Language */}
-          <SectionHeader title="Speaking Language" icon="🌐" />
+          <SectionHeader title="Speaking Language" icon="globe-outline" />
           <View style={styles.languagePicker}>
             <TouchableOpacity
               style={[styles.langBtn, context.language === 'he' && styles.langBtnActive]}
@@ -408,7 +409,7 @@ export default function ContextScreen() {
           </Text>
 
           {/* Favorite Song */}
-          <SectionHeader title="Favorite Song" icon="🎵" />
+          <SectionHeader title="Favorite Song" icon="musical-notes-outline" />
           <TextInput
             style={styles.input}
             value={context.favoriteSong}
@@ -422,7 +423,7 @@ export default function ContextScreen() {
           </Text>
 
           {/* Notes */}
-          <SectionHeader title="Additional Notes" icon="📝" />
+          <SectionHeader title="Additional Notes" icon="document-text-outline" />
           <TextInput
             style={[styles.input, styles.textArea]}
             value={context.notes}
@@ -544,15 +545,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderLight,
   },
   sectionIconBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 8,
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sectionIcon: {
-    fontSize: 18,
   },
   sectionTitle: {
     fontSize: 17,

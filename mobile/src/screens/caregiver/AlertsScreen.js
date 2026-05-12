@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { getAlerts, resolveAlert, getLocationBreaches } from '../../services/api';
 import { useApp } from '../../context/AppContext';
@@ -71,7 +72,11 @@ function AlertCard({ alert, onResolve }) {
     <View style={[styles.card, isBreach && styles.cardBreach, resolved && styles.cardResolved]}>
       <View style={styles.cardLeft}>
         <View style={[styles.alertIcon, isBreach && styles.alertIconBreach, resolved && styles.alertIconResolved]}>
-          <Text style={styles.alertIconText}>{resolved ? '✓' : isBreach ? '📍' : '🆘'}</Text>
+          <Ionicons
+            name={resolved ? 'checkmark' : isBreach ? 'walk-outline' : 'warning'}
+            size={20}
+            color={resolved ? colors.secondary : isBreach ? colors.amber : colors.danger}
+          />
         </View>
         <Text style={[styles.alertRelTime, isBreach && styles.alertRelTimeBreach, resolved && styles.alertRelTimeResolved]}>
           {formatAlertTime(timestamp)}
@@ -98,7 +103,7 @@ function AlertCard({ alert, onResolve }) {
           <Text style={styles.cardMetaItem}>📅 {formatFullTime(timestamp)}</Text>
           {notifCount != null && (
             <Text style={styles.cardMetaItem}>
-              🔔 {notifCount} notification{notifCount !== 1 ? 's' : ''} sent
+              {notifCount} notification{notifCount !== 1 ? 's' : ''} sent
             </Text>
           )}
         </View>
@@ -258,7 +263,7 @@ export default function AlertsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
+          <Ionicons name="warning-outline" size={48} color={colors.amber} style={{ marginBottom: 12 }} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadAlerts}>
             <Text style={styles.retryText}>Try Again</Text>
@@ -279,7 +284,7 @@ export default function AlertsScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.liveBanner}
           >
-            <Text style={styles.liveBannerTitle}>🆘 SOS ALERT RECEIVED</Text>
+            <Text style={styles.liveBannerTitle}>SOS ALERT RECEIVED</Text>
             <Text style={styles.liveBannerBody}>{liveAlert.message}</Text>
             <Text style={styles.liveBannerDismiss}>Tap to dismiss</Text>
           </LinearGradient>
@@ -295,7 +300,7 @@ export default function AlertsScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.liveBanner}
           >
-            <Text style={styles.liveBannerTitle}>📍 SAFE ZONE ALERT</Text>
+            <Text style={styles.liveBannerTitle}>SAFE ZONE ALERT</Text>
             <Text style={styles.liveBannerBody}>{liveBreach.message}</Text>
             <Text style={styles.liveBannerDismiss}>Tap to dismiss</Text>
           </LinearGradient>
@@ -370,10 +375,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 17,
     color: colors.textMuted,
-  },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
   },
   errorText: {
     fontSize: 18,
@@ -499,13 +500,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   alertIconBreach: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.amberLight,
   },
   alertIconResolved: {
     backgroundColor: '#DCFCE7',
-  },
-  alertIconText: {
-    fontSize: 22,
   },
   alertRelTime: {
     fontSize: 11,

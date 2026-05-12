@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
 
@@ -28,19 +29,19 @@ export default function CaregiverDashboard() {
         <View style={styles.infoCard}>
           <Text style={styles.infoTitle}>Quick Guide</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>💬</Text>
+            <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.primary} style={styles.infoIcon} />
             <Text style={styles.infoText}>
               <Text style={styles.infoBold}>History</Text> — View all past conversations with the AI assistant
             </Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>📋</Text>
+            <Ionicons name="person-circle-outline" size={22} color={colors.primary} style={styles.infoIcon} />
             <Text style={styles.infoText}>
               <Text style={styles.infoBold}>Context</Text> — Edit patient profile, medications, and routines
             </Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoIcon}>🔔</Text>
+            <Ionicons name="notifications-outline" size={22} color={colors.danger} style={styles.infoIcon} />
             <Text style={styles.infoText}>
               <Text style={styles.infoBold}>Alerts</Text> — See all SOS emergency events
             </Text>
@@ -110,7 +111,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoIcon: {
-    fontSize: 22,
     marginTop: 2,
   },
   infoText: {

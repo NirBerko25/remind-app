@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
 import { getConversations, getPatients, getConversationSummary } from '../../services/api';
@@ -67,9 +68,11 @@ function ConversationCard({ item, onPress, tldr }) {
           isEmergency && styles.cardIconEmergency,
           isConfused && styles.cardIconConfused,
         ]}>
-          <Text style={styles.cardIconText}>
-            {isEmergency ? '🆘' : isConfused ? '⚠️' : '💬'}
-          </Text>
+          <Ionicons
+            name={isEmergency ? 'warning' : isConfused ? 'help-circle' : 'chatbubble-ellipses'}
+            size={20}
+            color={isEmergency ? colors.danger : isConfused ? colors.amber : colors.primary}
+          />
         </View>
       </View>
       <View style={styles.cardContent}>
@@ -427,9 +430,6 @@ const styles = StyleSheet.create({
   },
   cardIconConfused: {
     backgroundColor: '#FEF3C7',
-  },
-  cardIconText: {
-    fontSize: 22,
   },
   cardContent: {
     flex: 1,
