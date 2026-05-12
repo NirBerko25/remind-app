@@ -17,11 +17,18 @@ import { getAlerts, resolveAlert, getLocationBreaches } from '../../services/api
 import { useApp } from '../../context/AppContext';
 import { API_BASE_URL } from '../../constants/config';
 
-function formatAlertTime(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
+// triggered_at is stored as Unix seconds (unixepoch()); resolved_at is ms (Date.now())
+function toMs(value) {
+  if (!value) return 0;
+  const n = Number(value);
+  return n < 1e12 ? n * 1000 : n;
+}
+
+function formatAlertTime(value) {
+  if (!value) return '';
+  const date = new Date(toMs(value));
+  const now = Date.now();
+  const diffMs = now - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
@@ -38,9 +45,9 @@ function formatAlertTime(dateString) {
   });
 }
 
-function formatFullTime(dateString) {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleString('en-US', {
+function formatFullTime(value) {
+  if (!value) return '';
+  return new Date(toMs(value)).toLocaleString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
