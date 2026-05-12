@@ -608,9 +608,9 @@ export default function PatientHomeScreen() {
             <View style={styles.infoCard}>
               <View style={styles.infoCardHeader}>
                 <Ionicons name="time-outline" size={15} color={colors.amber} />
-                <Text style={[styles.infoCardTitle, { color: colors.amber }]}>Today's Routine</Text>
+                <Text style={[styles.infoCardTitle, { color: colors.amber }]} numberOfLines={1}>Routine</Text>
               </View>
-              <Text style={styles.infoCardBody} numberOfLines={8}>{patientContext.dailyRoutine}</Text>
+              <Text style={styles.infoCardBody} numberOfLines={6}>{patientContext.dailyRoutine}</Text>
             </View>
           )}
           {!!patientContext?.notes && (
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 16,
     width: 160,
-    height: 150,
+    height: 170,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.borderLight,
