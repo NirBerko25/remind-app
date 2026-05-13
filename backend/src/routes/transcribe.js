@@ -32,7 +32,6 @@ async function transcribeWithGroq(buffer, mimetype, originalname, language = 'he
       file: fs.createReadStream(tmpFile),
       model: 'whisper-large-v3-turbo',
       response_format: 'text',
-      language: language === 'en' ? 'en' : 'he',
     });
     return typeof transcription === 'string' ? transcription : transcription.text || '';
   } finally {
@@ -54,7 +53,7 @@ async function transcribeWithGemini(buffer, mimetype, language = 'he') {
 
   const result = await model.generateContent([
     audioPart,
-    `Transcribe the speech in this audio clip. The speaker is speaking ${language === 'en' ? 'English' : 'Hebrew'} — transcribe exactly what was said in that language. Return only the spoken words, nothing else. If there is no speech or it is inaudible, return an empty string.`,
+    `Transcribe the speech in this audio clip. Auto-detect the language. Return only the spoken words exactly as said, in the original language. If there is no speech or it is inaudible, return an empty string.`,
   ]);
 
   return result.response.text().trim();

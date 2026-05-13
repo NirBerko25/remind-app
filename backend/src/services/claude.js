@@ -34,7 +34,7 @@ function detectState(message) {
   return 'normal';
 }
 
-function buildSystemPrompt(context) {
+function buildSystemPrompt(context, currentZoneName) {
   const name = context?.name || 'the patient';
   const age = context?.age || 'unknown age';
   const address = context?.address || 'address not provided';
@@ -68,6 +68,9 @@ function buildSystemPrompt(context) {
   }
 
   const baselineRules = context?.baseline_rules || 'Speak slowly and clearly. Be patient and reassuring.';
+  const locationNote = currentZoneName
+    ? `Patient's current location: inside the "${currentZoneName}" safe zone.`
+    : 'Patient\'s current location: outside all known safe zones (or location unavailable).';
 
   return `## LANGUAGE — MANDATORY
 You MUST respond in ${language} only. Every single word of your response must be in ${language}. Do not use English or any other language. Do not mix languages. This rule overrides everything else.
@@ -80,6 +83,7 @@ Patient context:
 - Name: ${name}
 - Age: ${age}
 - Home address: ${address}
+- Current location: ${locationNote}
 - Daily routine: ${dailyRoutine}
 - Family: ${familyStr}
 - Medications (for context only — never mention these to the patient): ${medicationsStr}
@@ -106,11 +110,11 @@ async function getConversationHistory(conversationId, limit = 20) {
   return messages.map(msg => ({ role: msg.role, content: msg.content }));
 }
 
-async function chat({ patientId, message, conversationId }) {
+async function chat({ patientId, message, conversationId, currentZoneName }) {
   const db = getDb();
 
   const context = db.prepare('SELECT * FROM patient_context WHERE patient_id = ?').get(patientId);
-  const systemPrompt = buildSystemPrompt(context);
+  const systemPrompt = buildSystemPrompt(context, currentZoneName);
 
   let history = [];
   if (conversationId) {

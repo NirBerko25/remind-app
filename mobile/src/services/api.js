@@ -34,11 +34,12 @@ apiClient.interceptors.response.use(
  * @param {string} message
  * @param {string|null} conversationId
  */
-export async function sendMessage(patientId, message, conversationId = null) {
+export async function sendMessage(patientId, message, conversationId = null, currentZoneName = null) {
   const response = await apiClient.post('/chat', {
     patientId,
     message,
     conversationId,
+    currentZoneName,
   });
   return response.data;
 }

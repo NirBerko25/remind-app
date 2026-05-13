@@ -95,6 +95,7 @@ export default function PatientHomeScreen() {
 
   // Foreground location polling — works on web and native, always uses fresh zone data
   const lastBreachRef = useRef(0);
+  const currentZoneNameRef = useRef(null); // tracks which safe zone patient is currently in
   const FOREGROUND_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes between alerts
   const POLL_INTERVAL_MS = 20 * 1000; // check every 20s
 
@@ -115,8 +116,9 @@ export default function PatientHomeScreen() {
         if (!zones.length) return;
 
         const { latitude, longitude } = loc.coords;
-        const inZone = zones.some(z => isInsideZone(z, latitude, longitude));
-        if (inZone) {
+        const currentZone = zones.find(z => isInsideZone(z, latitude, longitude));
+        currentZoneNameRef.current = currentZone?.name || null;
+        if (currentZone) {
           reportLocationSafe(patientId).catch(() => {});
         } else {
           const now = Date.now();
@@ -322,7 +324,7 @@ export default function PatientHomeScreen() {
       setMicState(MIC_STATES.PROCESSING);
       setMicLabel('Thinking...');
 
-      const response = await sendMessage(patientId, transcript, conversationId);
+      const response = await sendMessage(patientId, transcript, conversationId, currentZoneNameRef.current);
       const aiText = response.message || response.response || 'I am here to help you.';
       const newConversationId = response.conversationId || conversationId;
       if (newConversationId && !conversationId) setConversationId(newConversationId);
@@ -507,6 +509,13 @@ export default function PatientHomeScreen() {
     setMicLabel('Tap to talk');
   };
 
+  const bubbleGlowColor = {
+    idle:       colors.primary,
+    listening:  '#52D4C0',
+    processing: '#9B72E8',
+    speaking:   colors.secondary,
+  }[micState] ?? colors.primary;
+
   const stateLabel =
     micState === MIC_STATES.LISTENING  ? "I'm listening..." :
     micState === MIC_STATES.PROCESSING ? 'Just a moment...' :
@@ -515,7 +524,15 @@ export default function PatientHomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+
+      {/* ── Full-screen gradient background ── */}
+      <LinearGradient
+        colors={['#DFF0FF', '#EBF1FA']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
 
       {/* ── Top bar ── */}
       <View style={styles.topBar}>
@@ -533,7 +550,10 @@ export default function PatientHomeScreen() {
           colors={['#E8F2FF', '#F4F7FC']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={messages.length > 0 ? styles.avatarBubbleMini : styles.avatarBubble}
+          style={[
+            messages.length > 0 ? styles.avatarBubbleMini : styles.avatarBubble,
+            { shadowColor: bubbleGlowColor, shadowOpacity: 0.5, shadowRadius: 32, elevation: 14 },
+          ]}
         >
           <AIFace micState={micState} mini={messages.length > 0} />
         </LinearGradient>
@@ -559,72 +579,88 @@ export default function PatientHomeScreen() {
         </TouchableOpacity>
       )}
 
-      {/* ── Content: conversation OR info cards ── */}
+      {/* ── Content: conversation OR cards + mic sandwich ── */}
       {messages.length > 0 ? (
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.messagesContainer}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map((msg) => (
-            <ConversationBubble
-              key={msg.id}
-              text={msg.text}
-              sender={msg.sender}
-              timestamp={msg.timestamp}
-              large={true}
-            />
-          ))}
-        </ScrollView>
+        <>
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.messagesContainer}
+            contentContainerStyle={styles.messagesContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map((msg) => (
+              <ConversationBubble
+                key={msg.id}
+                text={msg.text}
+                sender={msg.sender}
+                timestamp={msg.timestamp}
+                large={true}
+              />
+            ))}
+          </ScrollView>
+        </>
       ) : (
-        <View style={styles.infoGrid}>
-          {patientContext?.medications?.length > 0 && (
-            <View style={styles.infoCard}>
-              <View style={styles.infoCardHeader}>
-                <Ionicons name="medical-outline" size={15} color={colors.primary} />
-                <Text style={styles.infoCardTitle}>Medications</Text>
+        <>
+          <View style={styles.infoGrid}>
+            {patientContext?.medications?.length > 0 && (
+              <View style={styles.infoCard}>
+                <View style={[styles.infoCardAccent, { backgroundColor: colors.primary }]} />
+                <View style={styles.infoCardInner}>
+                  <View style={styles.infoCardHeader}>
+                    <Ionicons name="medical-outline" size={15} color={colors.primary} />
+                    <Text style={styles.infoCardTitle}>Medications</Text>
+                  </View>
+                  {patientContext.medications.slice(0, 4).map((med, i) => (
+                    <Text key={i} style={styles.infoCardItem} numberOfLines={1}>· {med}</Text>
+                  ))}
+                  {patientContext.medications.length > 4 && (
+                    <Text style={styles.infoCardMore}>+{patientContext.medications.length - 4} more</Text>
+                  )}
+                </View>
               </View>
-              {patientContext.medications.slice(0, 4).map((med, i) => (
-                <Text key={i} style={styles.infoCardItem} numberOfLines={1}>· {med}</Text>
-              ))}
-              {patientContext.medications.length > 4 && (
-                <Text style={styles.infoCardMore}>+{patientContext.medications.length - 4} more</Text>
-              )}
-            </View>
-          )}
-          {patientContext?.familyMembers?.length > 0 && (
-            <View style={styles.infoCard}>
-              <View style={styles.infoCardHeader}>
-                <Ionicons name="people-outline" size={15} color={colors.secondary} />
-                <Text style={[styles.infoCardTitle, { color: colors.secondary }]}>Your Family</Text>
+            )}
+            {patientContext?.familyMembers?.length > 0 && (
+              <View style={styles.infoCard}>
+                <View style={[styles.infoCardAccent, { backgroundColor: colors.secondary }]} />
+                <View style={styles.infoCardInner}>
+                  <View style={styles.infoCardHeader}>
+                    <Ionicons name="people-outline" size={15} color={colors.secondary} />
+                    <Text style={[styles.infoCardTitle, { color: colors.secondary }]}>Your Family</Text>
+                  </View>
+                  {patientContext.familyMembers.slice(0, 4).map((m, i) => (
+                    <Text key={i} style={styles.infoCardItem} numberOfLines={1}>
+                      · {m.name}{m.relation ? ` — ${m.relation}` : ''}
+                    </Text>
+                  ))}
+                </View>
               </View>
-              {patientContext.familyMembers.slice(0, 4).map((m, i) => (
-                <Text key={i} style={styles.infoCardItem} numberOfLines={1}>
-                  · {m.name}{m.relation ? ` — ${m.relation}` : ''}
-                </Text>
-              ))}
-            </View>
-          )}
-          {!!patientContext?.dailyRoutine && (
-            <View style={styles.infoCard}>
-              <View style={styles.infoCardHeader}>
-                <Ionicons name="time-outline" size={15} color={colors.amber} />
-                <Text style={[styles.infoCardTitle, { color: colors.amber }]} numberOfLines={1}>Routine</Text>
+            )}
+            {!!patientContext?.dailyRoutine && (
+              <View style={styles.infoCard}>
+                <View style={[styles.infoCardAccent, { backgroundColor: colors.amber }]} />
+                <View style={styles.infoCardInner}>
+                  <View style={styles.infoCardHeader}>
+                    <Ionicons name="time-outline" size={15} color={colors.amber} />
+                    <Text style={[styles.infoCardTitle, { color: colors.amber }]} numberOfLines={1}>Routine</Text>
+                  </View>
+                  <Text style={styles.infoCardBody} numberOfLines={5}>{patientContext.dailyRoutine}</Text>
+                </View>
               </View>
-              <Text style={styles.infoCardBody} numberOfLines={6}>{patientContext.dailyRoutine}</Text>
-            </View>
-          )}
-          {!!patientContext?.notes && (
-            <View style={styles.infoCard}>
-              <View style={styles.infoCardHeader}>
-                <Ionicons name="document-text-outline" size={15} color={colors.textMuted} />
-                <Text style={[styles.infoCardTitle, { color: colors.textMuted }]}>Notes</Text>
+            )}
+            {!!patientContext?.notes && (
+              <View style={styles.infoCard}>
+                <View style={[styles.infoCardAccent, { backgroundColor: colors.textMuted }]} />
+                <View style={styles.infoCardInner}>
+                  <View style={styles.infoCardHeader}>
+                    <Ionicons name="document-text-outline" size={15} color={colors.textMuted} />
+                    <Text style={[styles.infoCardTitle, { color: colors.textMuted }]}>Notes</Text>
+                  </View>
+                  <Text style={styles.infoCardBody} numberOfLines={5}>{patientContext.notes}</Text>
+                </View>
               </View>
-              <Text style={styles.infoCardBody} numberOfLines={6}>{patientContext.notes}</Text>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
+        </>
       )}
 
       {/* ── Waveform ── */}
@@ -785,7 +821,7 @@ export default function PatientHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1, backgroundColor: 'transparent' },
 
   // Top bar
   topBar: {
@@ -807,7 +843,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderLight,
   },
   exitText: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
-  topClock: { fontSize: 34, fontWeight: '200', color: colors.text, letterSpacing: 1 },
+  topClock: { fontSize: 34, fontWeight: '300', color: colors.text, letterSpacing: 1 },
 
   // Avatar section
   avatarSection: {
@@ -884,41 +920,48 @@ const styles = StyleSheet.create({
 
   // Info cards — centered wrapping grid
   infoGrid: {
-    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    alignContent: 'center',
+    alignContent: 'flex-start',
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingTop: 8,
+    paddingBottom: 4,
     gap: 12,
   },
   infoCard: {
     backgroundColor: colors.surface,
     borderRadius: 22,
-    padding: 16,
     width: 160,
     height: 170,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.borderLight,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  infoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  infoCardAccent: {
+    height: 4,
+    width: '100%',
+  },
+  infoCardInner: {
+    padding: 14,
+    flex: 1,
+  },
+  infoCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
   infoCardTitle: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
     color: colors.primary,
     textTransform: 'uppercase',
-    letterSpacing: 0.7,
+    letterSpacing: 0.8,
   },
-  infoCardItem: { fontSize: 15, color: colors.text, lineHeight: 24, fontWeight: '500' },
+  infoCardItem: { fontSize: 14, color: colors.text, lineHeight: 22, fontWeight: '500' },
   infoCardMore: { fontSize: 12, color: colors.textLight, fontStyle: 'italic', marginTop: 2 },
-  infoCardBody: { fontSize: 14, color: colors.textMuted, lineHeight: 22 },
+  infoCardBody: { fontSize: 13, color: colors.textMuted, lineHeight: 20 },
 
   // Waveform
   waveformContainer: {
@@ -930,6 +973,41 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   waveBar: { width: 5, height: 32, borderRadius: 3, backgroundColor: colors.primary },
+
+  // Sandwich layout (no-messages state)
+  sandwichRow: {
+    flexDirection: 'row',
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    gap: 6,
+  },
+  sideColumn: {
+    flex: 1,
+    gap: 8,
+    justifyContent: 'center',
+  },
+  micColumn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sideCard: {
+    width: '100%',
+    height: 145,
+  },
+  sideCardInner: {
+    padding: 10,
+    flex: 1,
+  },
+  sideCardTitle: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  sideCardItem: { fontSize: 12, color: colors.text, lineHeight: 19, fontWeight: '500' },
+  sideCardBody: { fontSize: 11, color: colors.textMuted, lineHeight: 17 },
 
   // Mic area
   micArea: { alignItems: 'center', paddingVertical: 8 },

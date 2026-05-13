@@ -1,0 +1,1 @@
+- [Safe Zones Feature](project_safe_zones.md) — Geofencing feature: DB tables, backend routes, geofencing service, caregiver map, patient banner (2025-05-06)
