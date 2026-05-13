@@ -11,16 +11,24 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
-import { getAlerts, resolveAlert, getLocationBreaches } from '../../services/api';
+import { getAlerts, resolveAlert, getLocationBreaches, resolveLocationBreach } from '../../services/api';
 import { useApp } from '../../context/AppContext';
 import { API_BASE_URL } from '../../constants/config';
 
-function formatAlertTime(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now - date;
+// triggered_at is stored as Unix seconds (unixepoch()); resolved_at is ms (Date.now())
+function toMs(value) {
+  if (!value) return 0;
+  const n = Number(value);
+  return n < 1e12 ? n * 1000 : n;
+}
+
+function formatAlertTime(value) {
+  if (!value) return '';
+  const date = new Date(toMs(value));
+  const now = Date.now();
+  const diffMs = now - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
@@ -37,9 +45,9 @@ function formatAlertTime(dateString) {
   });
 }
 
-function formatFullTime(dateString) {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleString('en-US', {
+function formatFullTime(value) {
+  if (!value) return '';
+  return new Date(toMs(value)).toLocaleString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -60,7 +68,11 @@ function AlertCard({ alert, onResolve }) {
   const handleResolve = async () => {
     setResolving(true);
     try {
-      await resolveAlert(alert.id || alert._id);
+      if (isBreach) {
+        await resolveLocationBreach(alert.id || alert._id);
+      } else {
+        await resolveAlert(alert.id || alert._id);
+      }
       onResolve(alert.id || alert._id);
     } catch (_) {
       setResolving(false);
@@ -71,7 +83,11 @@ function AlertCard({ alert, onResolve }) {
     <View style={[styles.card, isBreach && styles.cardBreach, resolved && styles.cardResolved]}>
       <View style={styles.cardLeft}>
         <View style={[styles.alertIcon, isBreach && styles.alertIconBreach, resolved && styles.alertIconResolved]}>
-          <Text style={styles.alertIconText}>{resolved ? '✓' : isBreach ? '📍' : '🆘'}</Text>
+          <Ionicons
+            name={resolved ? 'checkmark' : isBreach ? 'walk-outline' : 'warning'}
+            size={20}
+            color={resolved ? colors.secondary : isBreach ? colors.amber : colors.danger}
+          />
         </View>
         <Text style={[styles.alertRelTime, isBreach && styles.alertRelTimeBreach, resolved && styles.alertRelTimeResolved]}>
           {formatAlertTime(timestamp)}
@@ -98,7 +114,7 @@ function AlertCard({ alert, onResolve }) {
           <Text style={styles.cardMetaItem}>📅 {formatFullTime(timestamp)}</Text>
           {notifCount != null && (
             <Text style={styles.cardMetaItem}>
-              🔔 {notifCount} notification{notifCount !== 1 ? 's' : ''} sent
+              {notifCount} notification{notifCount !== 1 ? 's' : ''} sent
             </Text>
           )}
         </View>
@@ -109,17 +125,19 @@ function AlertCard({ alert, onResolve }) {
         ) : isBreach ? (
           <Text style={styles.cardNote}>{patientName} left their safe zone.</Text>
         ) : null}
-        {!resolved && !isBreach && (
+        {!resolved && (
           <TouchableOpacity
-            style={styles.resolveButton}
+            style={[styles.resolveButton, isBreach && styles.resolveButtonBreach]}
             onPress={handleResolve}
             disabled={resolving}
             activeOpacity={0.8}
           >
             {resolving ? (
-              <ActivityIndicator size="small" color={colors.secondary} />
+              <ActivityIndicator size="small" color={isBreach ? colors.amber : colors.secondary} />
             ) : (
-              <Text style={styles.resolveButtonText}>✓ Mark as Handled</Text>
+              <Text style={[styles.resolveButtonText, isBreach && styles.resolveButtonTextBreach]}>
+                ✓ Mark as Handled
+              </Text>
             )}
           </TouchableOpacity>
         )}
@@ -258,7 +276,7 @@ export default function AlertsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
+          <Ionicons name="warning-outline" size={48} color={colors.amber} style={{ marginBottom: 12 }} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadAlerts}>
             <Text style={styles.retryText}>Try Again</Text>
@@ -279,7 +297,7 @@ export default function AlertsScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.liveBanner}
           >
-            <Text style={styles.liveBannerTitle}>🆘 SOS ALERT RECEIVED</Text>
+            <Text style={styles.liveBannerTitle}>SOS ALERT RECEIVED</Text>
             <Text style={styles.liveBannerBody}>{liveAlert.message}</Text>
             <Text style={styles.liveBannerDismiss}>Tap to dismiss</Text>
           </LinearGradient>
@@ -295,7 +313,7 @@ export default function AlertsScreen() {
             end={{ x: 1, y: 0 }}
             style={styles.liveBanner}
           >
-            <Text style={styles.liveBannerTitle}>📍 SAFE ZONE ALERT</Text>
+            <Text style={styles.liveBannerTitle}>SAFE ZONE ALERT</Text>
             <Text style={styles.liveBannerBody}>{liveBreach.message}</Text>
             <Text style={styles.liveBannerDismiss}>Tap to dismiss</Text>
           </LinearGradient>
@@ -304,11 +322,13 @@ export default function AlertsScreen() {
 
       {/* Active alerts count banner */}
       {activeAlerts.length > 0 && (
-        <View style={styles.activeBanner}>
-          <View style={styles.activeBannerDot} />
-          <Text style={styles.activeBannerText}>
-            {activeAlerts.length} active alert{activeAlerts.length !== 1 ? 's' : ''} require attention
-          </Text>
+        <View style={styles.activeBannerWrap}>
+          <View style={styles.activeBanner}>
+            <View style={styles.activeBannerDot} />
+            <Text style={styles.activeBannerText}>
+              {activeAlerts.length} active alert{activeAlerts.length !== 1 ? 's' : ''} require attention
+            </Text>
+          </View>
         </View>
       )}
 
@@ -371,10 +391,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.textMuted,
   },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
   errorText: {
     fontSize: 18,
     color: colors.text,
@@ -384,7 +400,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 14,
   },
@@ -422,16 +438,27 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  activeBannerWrap: {
+    alignItems: 'center',
+    paddingTop: 10,
+    paddingBottom: 2,
+  },
   activeBanner: {
     backgroundColor: '#FEF2F2',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FECACA',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FECACA',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    shadowColor: colors.danger,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   activeBannerDot: {
     width: 8,
@@ -457,7 +484,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -499,13 +526,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   alertIconBreach: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.amberLight,
   },
   alertIconResolved: {
     backgroundColor: '#DCFCE7',
-  },
-  alertIconText: {
-    fontSize: 22,
   },
   alertRelTime: {
     fontSize: 11,
@@ -544,7 +568,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 10,
   },
   urgentBadgeText: {
     fontSize: 10,
@@ -556,7 +580,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 10,
   },
   breachBadgeText: {
     fontSize: 10,
@@ -588,7 +612,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingVertical: 9,
     paddingHorizontal: 14,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: colors.secondary,
     alignSelf: 'flex-start',
@@ -596,10 +620,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  resolveButtonBreach: {
+    borderColor: colors.amber,
+  },
   resolveButtonText: {
     fontSize: 14,
     color: colors.secondary,
     fontWeight: '700',
+  },
+  resolveButtonTextBreach: {
+    color: colors.amber,
   },
   resolvedAt: {
     fontSize: 12,

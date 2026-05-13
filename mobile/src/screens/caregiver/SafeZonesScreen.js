@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import MapView, { Marker, Circle, Polygon, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
@@ -304,15 +306,19 @@ export default function SafeZonesScreen() {
     <SafeAreaView style={styles.container}>
       {/* Drawing mode indicator */}
       {drawMode !== DRAW_MODES.NONE && (
-        <View style={styles.drawingBanner}>
-          <Text style={styles.drawingBannerText}>
-            {drawMode === DRAW_MODES.PIN
-              ? 'Tap map to drop pin'
-              : `Polygon: ${polygonVertices.length} pt${polygonVertices.length !== 1 ? 's' : ''} — tap to add`}
-          </Text>
-          <TouchableOpacity onPress={cancelDrawing}>
-            <Text style={styles.cancelText}>✕ Cancel</Text>
-          </TouchableOpacity>
+        <View style={styles.drawingBannerWrap}>
+          <View style={styles.drawingBanner}>
+            <Ionicons name={drawMode === DRAW_MODES.PIN ? 'location' : 'shapes'} size={14} color="#92400E" />
+            <Text style={styles.drawingBannerText}>
+              {drawMode === DRAW_MODES.PIN
+                ? 'Tap map to drop pin'
+                : `${polygonVertices.length} point${polygonVertices.length !== 1 ? 's' : ''} — tap to add more`}
+            </Text>
+            <TouchableOpacity onPress={cancelDrawing} style={styles.cancelBtn}>
+              <Ionicons name="close" size={14} color={colors.danger} />
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -474,48 +480,68 @@ export default function SafeZonesScreen() {
 
       {/* Controls panel */}
       <View style={styles.panel}>
+        {/* Panel handle */}
+        <View style={styles.panelHandle} />
+
         {drawMode === DRAW_MODES.NONE ? (
           <View style={styles.addButtons}>
-            <TouchableOpacity style={styles.addBtn} onPress={startPinMode} activeOpacity={0.8}>
-              <Text style={styles.addBtnText}>📍 Add Circle Zone</Text>
+            <TouchableOpacity style={styles.addBtnWrap} onPress={startPinMode} activeOpacity={0.85}>
+              <LinearGradient colors={colors.gradientPrimary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtn}>
+                <Ionicons name="location" size={16} color={colors.white} />
+                <Text style={styles.addBtnText}>Circle Zone</Text>
+              </LinearGradient>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.addBtn, styles.addBtnSecondary]}
-              onPress={startPolygonMode}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.addBtnText}>✏️ Draw Polygon Zone</Text>
+            <TouchableOpacity style={styles.addBtnWrap} onPress={startPolygonMode} activeOpacity={0.85}>
+              <LinearGradient colors={colors.gradientSuccess} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtn}>
+                <Ionicons name="pencil" size={16} color={colors.white} />
+                <Text style={styles.addBtnText}>Polygon Zone</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         ) : drawMode === DRAW_MODES.PIN ? (
           <TouchableOpacity
-            style={[styles.addBtn, !pendingPin && styles.addBtnDisabled]}
+            style={[styles.addBtnWrap, !pendingPin && styles.addBtnDisabled]}
             onPress={confirmPin}
             disabled={!pendingPin}
             activeOpacity={0.8}
           >
-            <Text style={styles.addBtnText}>✓ Confirm Pin Location</Text>
+            <LinearGradient colors={colors.gradientPrimary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtn}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.white} />
+              <Text style={styles.addBtnText}>Confirm Pin Location</Text>
+            </LinearGradient>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
-            style={[styles.addBtn, polygonVertices.length < 3 && styles.addBtnDisabled]}
+            style={[styles.addBtnWrap, polygonVertices.length < 3 && styles.addBtnDisabled]}
             onPress={closePolygon}
             disabled={polygonVertices.length < 3}
             activeOpacity={0.8}
           >
-            <Text style={styles.addBtnText}>⬡ Close Shape ({polygonVertices.length} pts)</Text>
+            <LinearGradient colors={colors.gradientSuccess} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.addBtn}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.white} />
+              <Text style={styles.addBtnText}>Close Shape ({polygonVertices.length} pts)</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
         {loading ? (
-          <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />
+          <ActivityIndicator color={colors.primary} style={{ marginTop: 14 }} />
         ) : zones.length === 0 ? (
-          <Text style={styles.emptyText}>No safe zones defined yet.</Text>
+          <View style={styles.emptyWrap}>
+            <Ionicons name="map-outline" size={28} color={colors.textLight} />
+            <Text style={styles.emptyText}>No safe zones yet.{'\n'}Add a circle or draw a polygon above.</Text>
+          </View>
         ) : (
           <ScrollView style={styles.zoneList} showsVerticalScrollIndicator={false}>
             {zones.map(zone => (
               <View key={zone.id} style={styles.zoneRow}>
-                <Text style={styles.zoneIcon}>{zone.type === 'circle' ? '📍' : '⬡'}</Text>
+                <View style={[styles.zoneIconWrap, zone.type === 'circle' ? styles.zoneIconWrapCircle : styles.zoneIconWrapPoly]}>
+                  <Ionicons
+                    name={zone.type === 'circle' ? 'location' : 'shapes'}
+                    size={18}
+                    color={zone.type === 'circle' ? colors.primary : colors.secondary}
+                  />
+                </View>
                 <View style={styles.zoneInfo}>
                   <Text style={styles.zoneName}>{zone.name}</Text>
                   <Text style={styles.zoneMeta}>
@@ -523,10 +549,10 @@ export default function SafeZonesScreen() {
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => openEdit(zone)} style={styles.editBtn} activeOpacity={0.7}>
-                  <Text style={styles.editBtnText}>✎</Text>
+                  <Ionicons name="create-outline" size={18} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => confirmDelete(zone)} style={styles.deleteBtn} activeOpacity={0.7}>
-                  <Text style={styles.deleteBtnText}>✕</Text>
+                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -569,12 +595,19 @@ export default function SafeZonesScreen() {
               </View>
             )}
             <TouchableOpacity
-              style={[styles.saveBtn, saving && styles.addBtnDisabled]}
               onPress={saveZone}
               disabled={saving}
               activeOpacity={0.85}
+              style={saving && styles.addBtnDisabled}
             >
-              {saving ? <ActivityIndicator color={colors.white} /> : <Text style={styles.saveBtnText}>Save Zone</Text>}
+              <LinearGradient colors={colors.gradientPrimary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.saveBtn}>
+                {saving ? <ActivityIndicator color={colors.white} /> : (
+                  <>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.white} />
+                    <Text style={styles.saveBtnText}>Save Zone</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.modalCancelBtn}
@@ -618,14 +651,19 @@ export default function SafeZonesScreen() {
               </View>
             )}
             <TouchableOpacity
-              style={[styles.saveBtn, editSaving && styles.addBtnDisabled]}
               onPress={saveEdit}
               disabled={editSaving}
               activeOpacity={0.85}
+              style={editSaving && styles.addBtnDisabled}
             >
-              {editSaving
-                ? <ActivityIndicator color={colors.white} />
-                : <Text style={styles.saveBtnText}>Save Changes</Text>}
+              <LinearGradient colors={colors.gradientPrimary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.saveBtn}>
+                {editSaving ? <ActivityIndicator color={colors.white} /> : (
+                  <>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.white} />
+                    <Text style={styles.saveBtnText}>Save Changes</Text>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.modalCancelBtn}
@@ -642,35 +680,44 @@ export default function SafeZonesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+
+  // Drawing banner
+  drawingBannerWrap: { alignItems: 'center', paddingVertical: 6 },
   drawingBanner: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#FFF3CD',
+    gap: 6,
+    backgroundColor: '#FFF8E7',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F59E0B',
-    marginHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 4,
   },
   drawingBannerText: { color: '#92400E', fontWeight: '600', fontSize: 13, flex: 1 },
-  cancelText: { color: colors.danger, fontWeight: '700', fontSize: 14, marginLeft: 8 },
-  mapContainer: { flex: 1, marginHorizontal: 10, borderRadius: 16, overflow: 'hidden' },
+  cancelBtn: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  cancelText: { color: colors.danger, fontWeight: '700', fontSize: 13 },
+
+  // Map
+  mapContainer: { flex: 1, overflow: 'hidden' },
   map: { flex: 1 },
   patientLabelWrap: { position: 'absolute', width: 90, alignItems: 'center' },
   patientNameTag: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   patientNameText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   zoneLabelWrap: { position: 'absolute', width: 90, alignItems: 'center' },
   zoneNameTag: {
-    backgroundColor: 'rgba(16,185,129,0.85)',
-    borderRadius: 6,
+    backgroundColor: 'rgba(16,185,129,0.9)',
+    borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
@@ -679,79 +726,151 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 14,
     left: 12,
-    backgroundColor: 'rgba(255,255,255,0.93)',
-    borderRadius: 12,
-    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: 'center',
     minWidth: 62,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 5,
   },
-  mapStyleBtnIcon: { fontSize: 22 },
+  mapStyleBtnIcon: { fontSize: 20 },
   mapStyleBtnLabel: { fontSize: 10, fontWeight: '700', color: colors.text, marginTop: 2, textTransform: 'capitalize' },
+
+  // Bottom panel
   panel: {
     backgroundColor: colors.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: 8,
-    maxHeight: 240,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    maxHeight: 260,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
+    shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 10,
+    shadowRadius: 12,
+    elevation: 12,
   },
+  panelHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.borderLight,
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+
+  // Add buttons
   addButtons: { flexDirection: 'row', gap: 10 },
-  addBtn: { flex: 1, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  addBtnSecondary: { backgroundColor: colors.secondary },
+  addBtnWrap: { flex: 1 },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderRadius: 20,
+    paddingVertical: 13,
+    paddingHorizontal: 12,
+  },
   addBtnDisabled: { opacity: 0.4 },
-  addBtnText: { color: colors.white, fontWeight: '700', fontSize: 13 },
-  emptyText: { color: colors.textMuted, fontSize: 14, textAlign: 'center', marginTop: 12, fontStyle: 'italic' },
+  addBtnText: { color: colors.white, fontWeight: '700', fontSize: 14 },
+
+  // Empty state
+  emptyWrap: { alignItems: 'center', paddingVertical: 16, gap: 8 },
+  emptyText: { color: colors.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 20 },
+
+  // Zone list
   zoneList: { marginTop: 12 },
-  zoneRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.borderLight, gap: 10 },
-  zoneIcon: { fontSize: 20 },
+  zoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 8,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  zoneIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoneIconWrapCircle: { backgroundColor: colors.primaryLight },
+  zoneIconWrapPoly: { backgroundColor: colors.secondaryLight },
   zoneInfo: { flex: 1 },
   zoneName: { fontSize: 15, fontWeight: '700', color: colors.text },
   zoneMeta: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  editBtn: { backgroundColor: colors.primaryLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6 },
-  editBtnText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
-  deleteBtn: { backgroundColor: colors.dangerLight, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
-  deleteBtnText: { color: colors.danger, fontWeight: '700', fontSize: 14 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalCard: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: colors.text, marginBottom: 4 },
-  modalSubtitle: { fontSize: 13, color: colors.textMuted, marginBottom: 16 },
+  editBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.dangerLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Modals
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  modalCard: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: colors.text, marginBottom: 4 },
+  modalSubtitle: { fontSize: 13, color: colors.textMuted, marginBottom: 18 },
   nameInput: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
     fontSize: 16,
     color: colors.text,
-    backgroundColor: colors.surfaceAlt,
-    marginBottom: 12,
+    backgroundColor: colors.background,
+    marginBottom: 14,
   },
-  radiusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  radiusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   radiusLabel: { fontSize: 15, color: colors.text, fontWeight: '600' },
   radiusInput: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     fontSize: 15,
     color: colors.text,
-    width: 90,
+    width: 100,
     textAlign: 'center',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.background,
   },
-  saveBtn: { backgroundColor: colors.primary, borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginBottom: 10 },
+  saveBtn: {
+    borderRadius: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
   saveBtnText: { color: colors.white, fontWeight: '700', fontSize: 17 },
   modalCancelBtn: { alignItems: 'center', paddingVertical: 10 },
   modalCancelText: { color: colors.textMuted, fontSize: 15, fontWeight: '600' },

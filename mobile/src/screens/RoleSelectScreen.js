@@ -8,6 +8,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 import { colors } from '../constants/colors';
 import { initializeNotifications } from '../services/notifications';
@@ -32,7 +33,7 @@ export default function RoleSelectScreen() {
         style={styles.hero}
       >
         <View style={styles.logoCircle}>
-          <Text style={styles.logoEmoji}>🧠</Text>
+          <Ionicons name="heart" size={42} color="rgba(255,255,255,0.95)" />
         </View>
         <Text style={styles.title}>ReMind</Text>
         <Text style={styles.subtitle}>AI Assistant for Alzheimer's Care</Text>
@@ -56,7 +57,7 @@ export default function RoleSelectScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.patientButton}
             >
-              <Text style={styles.patientButtonIcon}>👤</Text>
+              <Ionicons name="person-circle" size={48} color="rgba(255,255,255,0.92)" style={styles.roleIcon} />
               <Text style={styles.patientButtonText}>I am a Patient</Text>
               <Text style={styles.buttonSubtext}>Simple voice assistant</Text>
             </LinearGradient>
@@ -69,7 +70,7 @@ export default function RoleSelectScreen() {
             accessibilityRole="button"
             accessibilityLabel="I am a Caregiver"
           >
-            <Text style={styles.caregiverButtonIcon}>🩺</Text>
+            <Ionicons name="medkit" size={44} color={colors.primary} style={styles.roleIcon} />
             <Text style={styles.caregiverButtonText}>I am a Caregiver</Text>
             <Text style={styles.caregiverButtonSubtext}>Monitor & manage patient care</Text>
           </TouchableOpacity>
@@ -155,9 +156,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     alignItems: 'center',
   },
-  patientButtonIcon: {
-    fontSize: 40,
-    marginBottom: 8,
+  roleIcon: {
+    marginBottom: 10,
   },
   patientButtonText: {
     fontSize: 26,
@@ -182,10 +182,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 8,
     elevation: 4,
-  },
-  caregiverButtonIcon: {
-    fontSize: 40,
-    marginBottom: 8,
   },
   caregiverButtonText: {
     fontSize: 26,

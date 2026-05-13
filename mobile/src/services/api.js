@@ -34,11 +34,12 @@ apiClient.interceptors.response.use(
  * @param {string} message
  * @param {string|null} conversationId
  */
-export async function sendMessage(patientId, message, conversationId = null) {
+export async function sendMessage(patientId, message, conversationId = null, currentZoneName = null) {
   const response = await apiClient.post('/chat', {
     patientId,
     message,
     conversationId,
+    currentZoneName,
   });
   return response.data;
 }
@@ -208,5 +209,20 @@ export async function reportLocationBreach(patientId, latitude, longitude) {
 export async function getLocationBreaches(patientId) {
   const url = patientId ? `/location/breaches?patientId=${patientId}` : '/location/breaches';
   const response = await apiClient.get(url);
+  return response.data;
+}
+
+export async function resolveLocationBreach(breachId) {
+  const response = await apiClient.patch(`/location/breaches/${breachId}/resolve`);
+  return response.data;
+}
+
+export async function reportLocationSafe(patientId) {
+  const response = await apiClient.post('/location/safe', { patientId });
+  return response.data;
+}
+
+export async function getLocationStatus(patientId) {
+  const response = await apiClient.get(`/location/status/${patientId}`);
   return response.data;
 }

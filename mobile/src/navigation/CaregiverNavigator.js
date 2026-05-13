@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
 
 import HistoryScreen from '../screens/caregiver/HistoryScreen';
@@ -10,6 +10,7 @@ import HistoryDetailScreen from '../screens/caregiver/HistoryDetailScreen';
 import ContextScreen from '../screens/caregiver/ContextScreen';
 import AlertsScreen from '../screens/caregiver/AlertsScreen';
 import SafeZonesScreen from '../screens/caregiver/SafeZonesScreen';
+import PatientStatusRail from '../components/PatientStatusRail';
 import { colors } from '../constants/colors';
 
 const Tab = createBottomTabNavigator();
@@ -19,44 +20,23 @@ function BackToRoleButton() {
   const { clearRole } = useApp();
   return (
     <TouchableOpacity onPress={clearRole} style={styles.backButton} activeOpacity={0.7}>
-      <Text style={styles.backButtonText}>← Exit</Text>
+      <Ionicons name="chevron-back" size={16} color="rgba(255,255,255,0.9)" />
+      <Text style={styles.backButtonText}>Exit</Text>
     </TouchableOpacity>
   );
 }
 
-function TabIcon({ emoji, label, focused }) {
+function TabIcon({ name, label, focused }) {
   return (
     <View style={styles.tabIconContainer}>
       {focused && <View style={styles.tabActiveIndicator} />}
-      <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>{emoji}</Text>
+      <Ionicons
+        name={focused ? name : `${name}-outline`}
+        size={22}
+        color={focused ? colors.primary : colors.textLight}
+      />
       <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>{label}</Text>
     </View>
-  );
-}
-
-function GradientHeader({ title }) {
-  return (
-    <LinearGradient
-      colors={colors.gradientHeader}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.gradientHeaderBar}
-    >
-      <Text style={styles.gradientHeaderTitle}>{title}</Text>
-    </LinearGradient>
-  );
-}
-
-function AlertsGradientHeader() {
-  return (
-    <LinearGradient
-      colors={['#DC2626', '#EF4444']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={styles.gradientHeaderBar}
-    >
-      <Text style={styles.gradientHeaderTitle}>🆘 SOS Alerts</Text>
-    </LinearGradient>
   );
 }
 
@@ -86,7 +66,9 @@ function HistoryStackNavigator() {
 
 export default function CaregiverNavigator() {
   return (
-    <Tab.Navigator
+    <View style={styles.root}>
+      <PatientStatusRail />
+      <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
@@ -100,7 +82,7 @@ export default function CaregiverNavigator() {
         component={HistoryStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="💬" label="History" focused={focused} />
+            <TabIcon name="chatbubble-ellipses" label="History" focused={focused} />
           ),
         }}
       />
@@ -115,7 +97,7 @@ export default function CaregiverNavigator() {
           headerTitleStyle: { fontWeight: '700', fontSize: 18, color: colors.white },
           headerLeft: () => <BackToRoleButton />,
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="📋" label="Profile" focused={focused} />
+            <TabIcon name="person-circle" label="Profile" focused={focused} />
           ),
         }}
       />
@@ -124,13 +106,13 @@ export default function CaregiverNavigator() {
         component={AlertsScreen}
         options={{
           headerShown: true,
-          headerTitle: 'SOS Alerts',
-          headerStyle: { backgroundColor: '#DC2626' },
+          headerTitle: 'Alerts',
+          headerStyle: { backgroundColor: colors.danger },
           headerTintColor: colors.white,
           headerTitleStyle: { fontWeight: '700', fontSize: 18, color: colors.white },
           headerLeft: () => <BackToRoleButton />,
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🔔" label="Alerts" focused={focused} />
+            <TabIcon name="notifications" label="Alerts" focused={focused} />
           ),
         }}
       />
@@ -145,16 +127,23 @@ export default function CaregiverNavigator() {
           headerTitleStyle: { fontWeight: '700', fontSize: 18, color: colors.white },
           headerLeft: () => <BackToRoleButton />,
           tabBarIcon: ({ focused }) => (
-            <TabIcon emoji="🗺️" label="Zones" focused={focused} />
+            <TabIcon name="map" label="Zones" focused={focused} />
           ),
         }}
       />
     </Tab.Navigator>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
     paddingHorizontal: 4,
     paddingVertical: 4,
   },
@@ -163,29 +152,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  gradientHeaderBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  gradientHeaderTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.white,
-  },
   tabBar: {
     backgroundColor: colors.surface,
-    borderTopColor: colors.border,
-    borderTopWidth: 1,
-    height: 76,
-    paddingBottom: 8,
-    paddingTop: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 16,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    height: 80,
+    paddingBottom: 12,
+    paddingTop: 8,
+    shadowColor: '#1C2B3A',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 18,
+    elevation: 24,
   },
   tabIconContainer: {
     alignItems: 'center',
@@ -196,23 +175,17 @@ const styles = StyleSheet.create({
   tabActiveIndicator: {
     position: 'absolute',
     top: -4,
-    width: 28,
+    width: 24,
     height: 3,
     borderRadius: 2,
     backgroundColor: colors.primary,
   },
-  tabEmoji: {
-    fontSize: 26,
-    opacity: 0.45,
-  },
-  tabEmojiFocused: {
-    opacity: 1,
-  },
   tabLabel: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 2,
+    fontSize: 10,
+    color: colors.textLight,
+    marginTop: 3,
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
   tabLabelFocused: {
     color: colors.primary,

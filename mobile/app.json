@@ -33,6 +33,11 @@
         }
       }
     },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "ReMind",
+      "description": "AI companion for memory care"
+    },
     "plugins": [
       "expo-av",
       [

@@ -8,7 +8,7 @@ const router = express.Router();
 // POST /api/chat
 router.post('/', async (req, res) => {
   try {
-    const { patientId, message, conversationId } = req.body;
+    const { patientId, message, conversationId, currentZoneName } = req.body;
 
     if (!patientId || !message) {
       return res.status(400).json({ error: 'patientId and message are required' });
@@ -54,6 +54,7 @@ router.post('/', async (req, res) => {
       patientId,
       message,
       conversationId: activeConversationId,
+      currentZoneName: currentZoneName || null,
     });
 
     // Save assistant message

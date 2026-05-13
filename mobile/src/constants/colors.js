@@ -1,39 +1,43 @@
 export const colors = {
-  // Primary — deep indigo-blue
-  primary: '#4F6EF7',
-  primaryDark: '#3B55D9',
-  primaryLight: '#EEF1FF',
+  // Primary — soft cornflower blue (calm, trustworthy)
+  primary: '#3A7BD5',
+  primaryDark: '#2860B8',
+  primaryLight: '#EAF2FC',
 
-  // Secondary — emerald
-  secondary: '#10B981',
-  secondaryLight: '#D1FAE5',
+  // Secondary — sage green (health, calm)
+  secondary: '#52A882',
+  secondaryLight: '#E5F4EE',
 
-  // Danger — vivid red
-  danger: '#EF4444',
-  dangerLight: '#FEE2E2',
+  // Danger — soft rose red
+  danger: '#D9534F',
+  dangerLight: '#FDEAEA',
+
+  // Amber — gentle warning
+  amber: '#E89B2F',
+  amberLight: '#FEF3E2',
 
   // Surfaces
-  background: '#F4F6FE',
+  background: '#F4F7FC',
   surface: '#FFFFFF',
-  surfaceAlt: '#F9FAFB',
+  surfaceAlt: '#F8FAFD',
   card: '#FFFFFF',
 
   // Text
-  text: '#111827',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
+  text: '#1C2B3A',
+  textMuted: '#7A8BA0',
+  textLight: '#A8B6C5',
 
   // Borders
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
+  border: '#DDE5F0',
+  borderLight: '#ECF0F7',
 
   // Misc
   white: '#FFFFFF',
-  overlay: 'rgba(10, 15, 40, 0.55)',
+  overlay: 'rgba(10, 20, 40, 0.5)',
 
   // Gradients (as arrays for LinearGradient)
-  gradientPrimary: ['#4F6EF7', '#7C3AED'],
-  gradientDanger: ['#EF4444', '#DC2626'],
-  gradientSuccess: ['#10B981', '#059669'],
-  gradientHeader: ['#3B55D9', '#4F6EF7', '#818CF8'],
+  gradientPrimary: ['#3A7BD5', '#6699E8'],
+  gradientDanger: ['#D9534F', '#C0392B'],
+  gradientSuccess: ['#52A882', '#3D9168'],
+  gradientHeader: ['#1E4FA8', '#3A7BD5', '#6699E8'],
 };

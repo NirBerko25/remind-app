@@ -10,6 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
 import { colors } from '../../constants/colors';
 import { getConversations, getPatients, getConversationSummary } from '../../services/api';
@@ -32,9 +33,14 @@ function getConversationFlag(conversation) {
   return null;
 }
 
-function formatDate(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
+function toMs(value) {
+  const n = Number(value);
+  return n < 1e12 ? n * 1000 : n;
+}
+
+function formatDate(value) {
+  if (!value) return '';
+  const date = new Date(toMs(value));
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -67,9 +73,11 @@ function ConversationCard({ item, onPress, tldr }) {
           isEmergency && styles.cardIconEmergency,
           isConfused && styles.cardIconConfused,
         ]}>
-          <Text style={styles.cardIconText}>
-            {isEmergency ? '🆘' : isConfused ? '⚠️' : '💬'}
-          </Text>
+          <Ionicons
+            name={isEmergency ? 'warning' : isConfused ? 'help-circle' : 'chatbubble-ellipses'}
+            size={20}
+            color={isEmergency ? colors.danger : isConfused ? colors.amber : colors.primary}
+          />
         </View>
       </View>
       <View style={styles.cardContent}>
@@ -269,9 +277,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
     gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    zIndex: 1,
   },
   selectorLabel: {
     fontSize: 13,
@@ -292,7 +304,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primaryLight,
-    borderRadius: 10,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 6,
@@ -363,7 +375,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 14,
   },
@@ -379,7 +391,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -428,9 +440,6 @@ const styles = StyleSheet.create({
   cardIconConfused: {
     backgroundColor: '#FEF3C7',
   },
-  cardIconText: {
-    fontSize: 22,
-  },
   cardContent: {
     flex: 1,
     gap: 5,
@@ -445,7 +454,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   flagBadgeEmergency: {

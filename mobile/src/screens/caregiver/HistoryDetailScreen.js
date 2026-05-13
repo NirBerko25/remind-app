@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { getConversationDetail, getConversationSummary } from '../../services/api';
 import ConversationBubble from '../../components/ConversationBubble';
@@ -24,10 +25,14 @@ function detectMessageState(text) {
   return null;
 }
 
-function formatTimestamp(dateString) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
+function toMs(value) {
+  const n = Number(value);
+  return n < 1e12 ? n * 1000 : n;
+}
+
+function formatTimestamp(value) {
+  if (!value) return '';
+  return new Date(toMs(value)).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
@@ -93,7 +98,7 @@ export default function HistoryDetailScreen({ route, navigation }) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centered}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
+          <Ionicons name="warning-outline" size={48} color={colors.amber} style={{ marginBottom: 12 }} />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadDetail}>
             <Text style={styles.retryText}>Try Again</Text>
@@ -138,7 +143,10 @@ export default function HistoryDetailScreen({ route, navigation }) {
               colors={['#EEF1FF', '#F4F6FE']}
               style={styles.summaryGradientHeader}
             >
-              <Text style={styles.summaryTitle}>🧠 AI Summary</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="sparkles" size={14} color={colors.primaryDark} />
+                <Text style={styles.summaryTitle}>AI Summary</Text>
+              </View>
             </LinearGradient>
             <View style={styles.summaryBody}>
               {summaryLoading ? (
@@ -156,7 +164,7 @@ export default function HistoryDetailScreen({ route, navigation }) {
         }
         ListEmptyComponent={
           <View style={styles.centered}>
-            <Text style={styles.emptyEmoji}>💬</Text>
+            <Ionicons name="chatbubble-ellipses-outline" size={48} color={colors.textLight} style={{ marginBottom: 12 }} />
             <Text style={styles.emptyText}>No messages in this conversation.</Text>
           </View>
         }
@@ -181,10 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: colors.textMuted,
   },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
-  },
   errorText: {
     fontSize: 18,
     color: colors.text,
@@ -194,7 +198,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: colors.primary,
-    borderRadius: 12,
+    borderRadius: 20,
     paddingHorizontal: 28,
     paddingVertical: 14,
   },
@@ -210,7 +214,7 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -256,10 +260,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     fontStyle: 'italic',
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
   },
   emptyText: {
     fontSize: 18,
